@@ -1,5 +1,5 @@
 # WorldOfHeroes
-Gauntlet Legends remake.
+Doom remake for console applications. using visual studio c++.
 
 # Engine
-Unity 2017.2.0f3
+Foobar Engine. (for now...)
