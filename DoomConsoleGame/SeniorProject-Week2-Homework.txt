@@ -1,0 +1,93 @@
+Maj Mech
+ Movement, Phys, Depth-Buffer
+ Enemies
+
+Min Mech
+ Keys and Doors
+
+==============================================
+
+hreid@aii.edu
+
+Requirements
+ - Memory manager
+ - Render Engine
+ - Input Manager
+ - Handle Input
+ - Movement
+ - Inventory
+ - Shooting
+ - 
+ - Load Asets
+ - Unload Assets
+
+Game Engine
+ - Memory Manager
+ - Render Engine
+ - Sound Engine
+ - Asset Manager
+ - Screen Manager
+ - Game
+ - Clean up
+
+Game
+ - Level
+ - Load assets
+ - Unload assets
+ - handle input
+ - update
+ - render
+
+Asset Manager
+ - Load Assets
+ - Unload Assets
+ - Extract Assets from Pack files
+
+Screen Manager
+ - Update
+ - Load Content
+ - Unload Content
+ - Next Screen
+ - Previous Screen
+
+// Memory Manager has been completed for the most part.
+Memmory Mngr
+ - Alloc Memory Buffer with desired Size	// Done.
+ - Releases Buffer Memory			// Done.
+ - Requests memory from the buffer.		// Done.
+ - Releases memory back into buffer		// Done.
+
+Sound Engine
+ - Read sound files
+ - Play sound files
+ - pause sound files
+ - stop sound files
+ - unload sound files
+ - handle sound channels
+
+// Rendering Engine is almost complete.
+Render Engine
+ - Raycast							// Done.
+ - depth buffer							// Needs completion.
+ - render images at certain locations using desired colors	// Done.
+ - clearing buffers						// Done.
+
+
+Input Manager
+ - Key event handling
+ - Mouse Event Handling ?
+ - Keyboard buffer
+ - Controller Struct
+    - Pressed, Hold, Released
+------------------------
+Movement
+ - Forward
+ - Backward
+ - Left
+ - Right
+ - Rotation CCW
+ - Rotation CW
+ - Shooting
+ - Weapon Swap
+
+ 
