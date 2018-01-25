@@ -18,10 +18,14 @@ struct ScreenBuffer
 	int Height;
 };
 
-int screenWidth = 120;
-int screenHeight = 40;
+int screenWidth = 320; //160;
+int screenHeight = 176; //88;
 wchar_t* screenBuffer = 0;
 unsigned short* screenAttribs = 0;
+float *depthBuffer = 0;
+
+int fontw = 4;// 8;
+int fonth = 4;// 8;
 
 // Types of Pixels to use
 #define PIXEL_SOLID 0x2588

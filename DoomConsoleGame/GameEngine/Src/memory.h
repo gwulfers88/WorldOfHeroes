@@ -19,7 +19,7 @@ typedef void* MemoryHandle;
 void InitializeMemory(size_t size);
 void FreeMemory();
 MemoryHandle InitializeChunk(size_t size);
-#define CreateObject(handle, type) (type*)PushObject(handle, sizeof(type))
+#define CreateObject(handle, type) new((type*)PushObject(handle, sizeof(type))) type
 #define CreateArray(handle, type, Count) (type*)PushObject(handle, sizeof(type)*Count)
 void* PushObject(MemoryHandle Chunk, size_t AllocSize);
 #define PullStruct(handle, type) PullObject(handle, sizeof(type))
