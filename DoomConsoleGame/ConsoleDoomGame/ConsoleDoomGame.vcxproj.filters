@@ -7,16 +7,8 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Src\memory.cpp">
+    <ClCompile Include="Src\Demo.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="Src\memory.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Src\ConsoleRenderer.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
   </ItemGroup>
 </Project>
