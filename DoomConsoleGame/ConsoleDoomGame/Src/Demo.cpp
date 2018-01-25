@@ -31,29 +31,6 @@ This is the entry point to our progrqam.
 
 #define PI 3.14159265359f
 
-#pragma pack(push, 2)
-struct Obj
-{
-	int x;	//4
-	int y;	//4
-	char c;	//1
-};
-#pragma pack(pop)
-
-struct Base
-{
-public:
-	~Base() {}
-	void Method() {}
-};
-
-struct Child : public Base
-{
-public:
-	~Child() {}
-	void Method() {}
-};
-
 //int argCount -- Used to determine the number of arguments being passed to the application
 //char** args  -- Array list of arguments entered.
 int main(int argCount, char** args)
