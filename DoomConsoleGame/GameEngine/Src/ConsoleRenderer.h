@@ -76,7 +76,7 @@ void DrawPixel(int x, int y, wchar_t pixel = PIXEL_SOLID, unsigned short color =
 }
 
 // Draws a sprite onto the screen buffer using desired x, y pos and color.
-void DrawSprite(int posX, int posY, int spriteW, int spriteH, wchar_t* spriteData, unsigned short color = PIXEL_COLOR_WHITE)
+void DrawSprite(int posX, int posY, int spriteW, int spriteH, wchar_t* spriteData, unsigned short *colorData)
 {
 	for (int col = 0; col < spriteH; ++col)
 	{
@@ -85,8 +85,8 @@ void DrawSprite(int posX, int posY, int spriteW, int spriteH, wchar_t* spriteDat
 			int pixelX = posX + row;
 			int pixelY = posY + col;
 			wchar_t glyph = spriteData[col * spriteW + row];
-			short c = (glyph == '#') ? color : PIXEL_COLOR_BLACK;
-			DrawPixel(pixelX, pixelY, PIXEL_SOLID, c);
+			unsigned short color = colorData[col * spriteW + row];
+			DrawPixel(pixelX, pixelY, glyph, color);
 		}
 	}
 }
