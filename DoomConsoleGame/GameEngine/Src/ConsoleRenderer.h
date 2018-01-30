@@ -18,7 +18,7 @@ struct ScreenBuffer
 	int Height;
 };
 
-int screenWidth = 320; //160;
+int screenWidth = 640;// 320; //160;
 int screenHeight = 176; //88;
 wchar_t* screenBuffer = 0;
 unsigned short* screenAttribs = 0;
