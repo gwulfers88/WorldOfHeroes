@@ -7,121 +7,123 @@
 */
 #pragma comment(lib, "GameEngine_Debug.lib")
 
-#include <stdio.h>
-#include <Windows.h>
-#include <math.h>
+#include "platform.h"
+#include "Sprite.h"
 #include "ConsoleRenderer.h"
 #include "memory.h"
-
-#ifdef _DEBUG
-#define Assert(Exp) { if(!Exp) { *(int *)0 = 0; } }
-#elif
-#define Assert(Exp)
-#endif // DEBUG
-
-#define ArrayCount(Array) (sizeof(Array)/sizeof(Array[0]))
-#define Kilobytes(Size) (Size * 1024)
-#define Megabytes(Size) (Kilobytes(Size) * 1024)
-#define Gigabytes(Size) (Megabytes(Size) * 1024)
-
-#define PI 3.14159265359f
 
 MemoryHandle PersistantHandle = 0;
 MemoryHandle TransientHandle = 0;
 
-#pragma pack(push, 16)
-struct SpriteHeader
+char loadFilename[] = "test";
+char saveFilename[] = "new_image";
+char Path[] = "Save/";
+char fileExt[] = ".sprt";
+
+struct FileRead
 {
-	wchar_t Sentinal[2];
-	int Width;
-	int Height;
-	int FileSize;
-	int PixelOffset;
-	int ColorOffset;
+	void* Data;
+	long fileSize;
 };
 
-struct Sprite
+long GetFileSize(FILE* file)
 {
-	int Width;
-	int Height;
-	wchar_t* Pixels;
-	WORD *Colors;
-};
-#pragma pack(pop)
+	fseek(file, 0, SEEK_END);
+	long fileSize = ftell(file);
+	fseek(file, 0, SEEK_SET);
 
-Sprite CreateSprite(int W, int H, MemoryHandle memory)
-{
-	Sprite sprite = {};
-	size_t TotalSize = W * H;
-	sprite.Pixels = CreateArray(memory, wchar_t, TotalSize);
-	sprite.Colors = CreateArray(memory, WORD, TotalSize);
-
-	Assert(sprite.Pixels);
-	Assert(sprite.Colors);
-
-	sprite.Width = W;
-	sprite.Height = H;
-
-	return sprite;
+	return fileSize;
 }
 
 FILE* image = 0;
-char filename[] = "image_file.sprt";
 
-void WriteFile(Sprite sprite)
+void WriteFile(Sprite sprite, char* filename)
 {
-	fopen_s(&image, filename, "wb");
+	size_t totalSize = strlen(Path) + strlen(filename) + strlen(fileExt);
+	char* buffer = CreateArray(PersistantHandle, char, totalSize);
+	strcat(buffer, Path);
+	strcat(buffer, filename);
+	strcat(buffer, fileExt);
+
+	fopen_s(&image, buffer, "wb");
 	Assert(image);
 
-	size_t TotalPixelSize = sprite.Width * sprite.Height * sizeof(wchar_t);
-	size_t TotalColorSize = sprite.Width * sprite.Height * sizeof(WORD);
-	SpriteHeader header = {};
-	header.Sentinal[0] = 'G';
-	header.Sentinal[1] = 'W';
-	header.Width = sprite.Width;
-	header.Height = sprite.Height;
-	header.FileSize = sizeof(header);
-	header.PixelOffset = sizeof(header);
-	header.ColorOffset = sizeof(header) + TotalPixelSize;
+	size_t TotalPixelSize = GetPixelSize(sprite);
+	size_t TotalColorSize = GetColorSize(sprite);
 
-	size_t writen = fwrite(&header, sizeof(SpriteHeader), 1, image);
-	writen += fwrite(sprite.Pixels, TotalPixelSize, 1, image);
-	writen += fwrite(sprite.Colors, TotalColorSize, 1, image);
+	SpriteHeader header = GetSpriteHeader(sprite);
 
-	Assert(writen > 0);
+	fwrite(&header, sizeof(SpriteHeader), 1, image);
+	fwrite(sprite.Pixels, TotalPixelSize, 1, image);
+	fwrite(sprite.Colors, TotalColorSize, 1, image);
 
 	fclose(image);
+
+	PullArray(PersistantHandle, char, totalSize);
 }
 
-Sprite ReadFile()
+FileRead ReadEntireFile(char* filename)
 {
-	fopen_s(&image, "test.sprt", "rb");
-	Assert(image);
+	FileRead fileRead = {};
 
-	SpriteHeader header = {};
-	fread(&header, sizeof(header), 1, image);
+	FILE* file = fopen(filename, "rb");
+	long fileSize = GetFileSize(file);
+	fileRead.fileSize = fileSize;
+	fileRead.Data = CreateVoidPtr(PersistantHandle, void, fileSize);
 
-	Sprite sprite = CreateSprite(header.Width, header.Height, PersistantHandle);
-	size_t TotalPixelSize = sprite.Width * sprite.Height * sizeof(wchar_t);
-	size_t TotalColorSize = sprite.Width * sprite.Height * sizeof(WORD);
-	fread(sprite.Pixels, TotalPixelSize, 1, image);
-	fread(sprite.Colors, TotalColorSize, 1, image);
+	Assert(fileRead.Data);
+	fread(fileRead.Data, fileSize, 1, file);
+	fclose(file);
 
-	fclose(image);
+	return fileRead;
+}
 
+Sprite LoadSprite(char* filename)
+{
+	size_t totalSize = strlen(Path) + strlen(filename) + strlen(fileExt);
+	char* buffer = CreateArray(PersistantHandle, char, totalSize);
+	strcat(buffer, Path);
+	strcat(buffer, filename);
+	strcat(buffer, fileExt);
+
+	Sprite sprite = {};
+	FileRead fileRead = ReadEntireFile(buffer);	// Read the entire file into a buffer
+
+	SpriteHeader* header = (SpriteHeader*)fileRead.Data;	// Fetch the header file
+	Assert(header);	// make sure that we actually got a header 
+	
+	// Make sure that the file identifier is set properly other wise this is not a 
+	// SPRT image
+	if (header->Sentinal[0] == 'G' && header->Sentinal[1] == 'W')
+	{
+		Assert(header->FileSize == fileRead.fileSize);	// Make sure that the size of the file matches the headers file size
+		sprite = CreateSprite(header->Width, header->Height, PersistantHandle);	// Create sprite object
+		size_t PixelSize = GetPixelSize(sprite);	//Calculate sizes for Pixel array and Color array
+		size_t ColorSize = GetColorSize(sprite);
+
+		sprite.Pixels = (wchar_t*)((char*)fileRead.Data + header->PixelOffset);			// Fetching Pixel data
+		sprite.Colors = (unsigned short*)((char*)fileRead.Data + header->ColorOffset);	// Fetching Color data
+	}
+	else	// This file is not in our SPRT format
+	{
+		MessageBox(0, L"Incorrect file format.", L"ERROR:", MB_ICONERROR | MB_OK);
+	}
+	
+	PullArray(PersistantHandle, char, totalSize);	// Release the string buffer we allocated earlier
+	
 	return sprite;
 }
 
 int main()
 {
 	// Initialize our memory pools.
-	size_t BaseSize = Kilobytes(200);
+	size_t BaseSize = Megabytes(50);
 	InitializeMemory(BaseSize);
 	PersistantHandle = InitializeChunk((int)(BaseSize * 0.5f));
 	TransientHandle = InitializeChunk((int)(BaseSize * 0.5f));
 
-	screenWidth = 120;
-	screenHeight = 70;
+	screenWidth = 400;
+	screenHeight = 200;
 	fontw = 10;
 	fonth = 10;
 	// Create our buffers
@@ -135,6 +137,7 @@ int main()
 	// Get handle to a new console window that we can read and write from.
 	HANDLE hConsole = CreateConsoleScreenBuffer(GENERIC_READ | GENERIC_WRITE, 0, 0, CONSOLE_TEXTMODE_BUFFER, 0);
 
+retry:
 	// Set initial window size to the smalled possible. this is needed to be able to set a propper size for the window.
 	SMALL_RECT rect = { 0, 0, 1, 1 };
 	Assert(SetConsoleWindowInfo(hConsole, TRUE, &rect));
@@ -162,11 +165,15 @@ int main()
 	GetConsoleScreenBufferInfo(hConsole, &consoleInfo);
 	if (screenWidth > consoleInfo.dwMaximumWindowSize.X)
 	{
-		MessageBox(0, L"Width is greater than max Width\n", L"ERROR!", MB_OK);
+		//MessageBox(0, L"Width is greater than max Width\n", L"ERROR!", MB_OK);
+		screenWidth = consoleInfo.dwMaximumWindowSize.X / 2;
+		goto retry;
 	}
 	if (screenHeight > consoleInfo.dwMaximumWindowSize.Y)
 	{
-		MessageBox(0, L"Height is greater than max Height\n", L"ERROR!", MB_OK);
+		//MessageBox(0, L"Height is greater than max Height\n", L"ERROR!", MB_OK);
+		screenHeight = consoleInfo.dwMaximumWindowSize.Y / 2;
+		goto retry;
 	}
 
 	// set the actual window size.
@@ -179,8 +186,12 @@ int main()
 	// set title for window.
 	SetConsoleTitleW(L"Sprite Editor v1.0 - George Wulfers");
 
-	Sprite sprite = ReadFile(); //CreateSprite(screenWidth/2, screenHeight/2, PersistantHandle);
-	
+	Sprite sprite = {};
+	if(ArrayCount(loadFilename) > 4)
+		sprite = LoadSprite(loadFilename);
+	else
+		sprite = CreateSprite(screenWidth / 2, screenHeight / 2, PersistantHandle);
+
 	int CanvasX = (int)((screenWidth/2.0f) - (sprite.Width/2.0f));
 	int CanvasY = (int)((screenHeight / 2.0f) - (sprite.Height / 2.0f));
 
@@ -346,11 +357,12 @@ int main()
 				DrawPixel(CanvasX + (int)CursorX + (int)(x), CanvasY + (int)CursorY + (int)(y), PIXEL_SEMI_DARK, PIXEL_COLOR_LIGHT_CYAN);
 			}
 		}
-
+		
 		PresentBuffer(hConsole);
 	}
 	
-	WriteFile(sprite);
+	if(ArrayCount(saveFilename) > 4)
+		WriteFile(sprite, saveFilename);
 
 	FreeConsole();
 	FreeMemory();

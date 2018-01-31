@@ -1,5 +1,6 @@
-#include "memory.h"
 #include <memory>
+#include "memory.h"
+#include "platform.h"
 
 struct memory
 {
@@ -34,6 +35,8 @@ memory AllocateMemory(size_t size)
 	Result.base = malloc(size);
 	Result.size = size;
 
+	Assert(Result.base);
+
 	return Result;
 }
 
@@ -62,10 +65,11 @@ void FreeMemory()
 MemoryHandle InitializeChunk(size_t size)
 {
 	MemoryHandle handle = 0;
-
+	
 	if (memoryChunksCount < MAX_MEMORY_CHUNKS)
 	{
 		memory_chunk *Chunk = memoryChunks + memoryChunksCount;
+		Assert(Chunk);
 
 		if (Memory.used + size <= Memory.size)
 		{

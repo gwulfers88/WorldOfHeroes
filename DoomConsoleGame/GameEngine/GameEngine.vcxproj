@@ -132,6 +132,8 @@
   <ItemGroup>
     <ClInclude Include="Src\ConsoleRenderer.h" />
     <ClInclude Include="Src\memory.h" />
+    <ClInclude Include="Src\platform.h" />
+    <ClInclude Include="Src\Sprite.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
