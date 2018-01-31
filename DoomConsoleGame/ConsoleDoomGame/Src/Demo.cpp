@@ -10,26 +10,9 @@ This is the entry point to our progrqam.
 
 #pragma comment(lib, "GameEngine_Debug.lib")
 
-#include <stdio.h>
-#include <vector>
-#include <algorithm>
-#include <math.h>
-#include <Windows.h>
+#include "platform.h"
 #include "memory.h"
 #include "ConsoleRenderer.h"
-
-#ifdef _DEBUG
-#define Assert(Exp) { if(!Exp) { *(int *)0 = 0; } }
-#elif
-#define Assert(Exp)
-#endif // DEBUG
-
-#define ArrayCount(Array) (sizeof(Array)/sizeof(Array[0]))
-#define Kilobytes(Size) (Size * 1024)
-#define Megabytes(Size) (Kilobytes(Size) * 1024)
-#define Gigabytes(Size) (Megabytes(Size) * 1024)
-
-#define PI 3.14159265359f
 
 //int argCount -- Used to determine the number of arguments being passed to the application
 //char** args  -- Array list of arguments entered.

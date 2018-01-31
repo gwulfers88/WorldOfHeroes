@@ -18,5 +18,11 @@
     <ClInclude Include="Src\ConsoleRenderer.h">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="Src\platform.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Sprite.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
