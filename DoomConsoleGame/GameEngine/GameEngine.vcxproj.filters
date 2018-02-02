@@ -10,6 +10,9 @@
     <ClCompile Include="Src\memory.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Src\ConsoleApp.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Src\memory.h">
@@ -22,6 +25,12 @@
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="Src\Sprite.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\ConsoleApp.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\BaseGame.h">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>

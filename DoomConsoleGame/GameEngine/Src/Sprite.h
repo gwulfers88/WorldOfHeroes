@@ -26,7 +26,7 @@ struct Sprite
 };
 #pragma pack(pop)
 
-Sprite CreateSprite(int W, int H, MemoryHandle memory)
+Sprite CreateSprite(MemoryHandle memory, int W, int H)
 {
 	Sprite sprite = {};
 	size_t TotalSize = W * H;
