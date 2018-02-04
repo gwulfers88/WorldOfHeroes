@@ -26,20 +26,11 @@ struct ScreenBuffer
 };
 #pragma pack(pop)
 
-//int screenWidth = 640;// 320; //160;
-//int screenHeight = 176; //88;
-//wchar_t* screenBuffer = 0;
-//unsigned short* screenAttribs = 0;
-//float *depthBuffer = 0;
-//
-//int fontw = 4;// 8;
-//int fonth = 4;// 8;
-
 // Types of Pixels to use
-#define PIXEL_SOLID 0x2588
-#define PIXEL_DARK 0x2591
-#define PIXEL_MEDIUM_DARK 0x2592
-#define PIXEL_SEMI_DARK 0x2593
+#define PIXEL_SOLID			0x2588
+#define PIXEL_DARK			0x2591
+#define PIXEL_MEDIUM_DARK	0x2592
+#define PIXEL_SEMI_DARK		0x2593
 
 // All of the colors we can use
 #define PIXEL_COLOR_INTENSITY		0x0008

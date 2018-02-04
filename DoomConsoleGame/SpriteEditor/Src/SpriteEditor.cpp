@@ -2,10 +2,24 @@
 #include "Sprite.h"
 
 Sprite sprite;
-char loadFilename[] = "test";
-char saveFilename[] = "new_image";
 char Path[] = "Save/";
 char fileExt[] = ".sprt";
+
+#pragma pack(push, 16)
+struct pak_header
+{
+	i8 id[4];		// id to make sure pak header is valid "PACK"
+	i32 offset;		// Index to the beginning of the file table
+	i32 fileSize;	// Size of the entire file table
+};
+
+struct pak_file
+{
+	i8 filename[56];	// name of the file including folders. "path/file.ext"
+	i32 offset;			// Offset to the start of the file contents starting from the begging of the pak file
+	i32 fileSize;		// size of this file.
+};
+#pragma pack(pop)
 
 struct FileRead
 {
@@ -23,6 +37,9 @@ long GetFileSize(FILE* file)
 }
 
 FILE* image = 0;
+
+#define WRITE_ENTIRE_FILE(name) void name(MemoryHandle memoryHandle, Sprite sprite, char* filename)
+typedef WRITE_ENTIRE_FILE(write_entire_file);
 
 void WriteFile(MemoryHandle memoryHandle, Sprite sprite, char* filename)
 {
@@ -49,7 +66,9 @@ void WriteFile(MemoryHandle memoryHandle, Sprite sprite, char* filename)
 	PullArray(memoryHandle, char, totalSize);
 }
 
-FileRead ReadEntireFile(MemoryHandle memoryHandle, char* filename)
+#define READ_ENTIRE_FILE(name) FileRead name(MemoryHandle memoryHandle, char* filename)
+typedef READ_ENTIRE_FILE(read_entire_file);
+READ_ENTIRE_FILE(ReadEntireFile)
 {
 	FileRead fileRead = {};
 
@@ -101,15 +120,74 @@ Sprite LoadSprite(MemoryHandle memoryHandle, char* filename)
 	return sprite;
 }
 
+unsigned short colors[] =
+{
+	PIXEL_COLOR_BLACK,
+	PIXEL_COLOR_DARK_RED,
+	PIXEL_COLOR_DARK_GREEN,
+	PIXEL_COLOR_DARK_BLUE,
+	PIXEL_COLOR_DARK_YELLOW,
+	PIXEL_COLOR_DARK_MAGENTA,
+	PIXEL_COLOR_DARK_CYAN,
+	PIXEL_COLOR_LIGHT_RED,
+	PIXEL_COLOR_LIGHT_GREEN,
+	PIXEL_COLOR_LIGHT_BLUE,
+	PIXEL_COLOR_LIGHT_YELLOW,
+	PIXEL_COLOR_LIGHT_MAGENTA,
+	PIXEL_COLOR_LIGHT_CYAN,
+	PIXEL_COLOR_GREY,
+	PIXEL_COLOR_WHITE
+};
+
+void PackFiles(MemoryHandle memoryHandle, Sprite image, char *filename)
+{
+	size_t totalSize = strlen(Path) + strlen(filename) + strlen(fileExt);
+	char* buffer = CreateArray(memoryHandle, char, totalSize);
+	strcat(buffer, Path);
+	strcat(buffer, filename);
+	strcat(buffer, fileExt);
+
+	pak_header header = {};
+	header.id[0] = 'P';
+	header.id[1] = 'A';
+	header.id[2] = 'C';
+	header.id[3] = 'K';
+
+	header.offset = sizeof(pak_header);
+	header.fileSize = sizeof(pak_file);
+
+	pak_file file = {};
+	strcpy(file.filename, buffer);
+	file.offset = header.offset + sizeof(pak_file);
+	file.fileSize = sizeof(image);
+
+	FILE* pakFile = fopen("Save/test.pak", "wb");
+	if (pakFile)
+	{
+		fwrite(&header, sizeof(header), 1, pakFile);
+		fwrite(&file, sizeof(file), 1, pakFile);
+		fwrite(&image, sizeof(image), 1, pakFile);
+
+		fclose(pakFile);
+	}
+
+	PullArray(memoryHandle, char, totalSize);
+}
+
 void SpriteEditor::LoadContent()
 {
 	int screenWidth = renderer.GetRenderBuffers()->Width;
 	int screenHeight = renderer.GetRenderBuffers()->Height;
 
-	if (ArrayCount(loadFilename) > 4)
-		sprite = LoadSprite(persistantHandle, loadFilename);
+	if (filename && loadFile)
+		sprite = LoadSprite(persistantHandle, filename);
 	else
-		sprite = CreateSprite(persistantHandle, screenWidth / 2, screenHeight / 2);
+	{
+		ImgWidth = Minimum(ImgWidth, screenWidth/2);
+		ImgHeight = Minimum(ImgHeight, screenHeight/2);
+
+		sprite = CreateSprite(persistantHandle, ImgWidth, ImgHeight);
+	}
 
 	CanvasX = (int)((screenWidth / 2.0f) - (sprite.Width / 2.0f));
 	CanvasY = (int)((screenHeight / 2.0f) - (sprite.Height / 2.0f));
@@ -119,28 +197,8 @@ void SpriteEditor::LoadContent()
 	CursorSpeed = 5;
 	CursorRadius = 2.0f;
 
-	unsigned short colors[] =
-	{
-			PIXEL_COLOR_BLACK,
-			PIXEL_COLOR_DARK_RED,
-			PIXEL_COLOR_DARK_GREEN,
-			PIXEL_COLOR_DARK_BLUE,
-			PIXEL_COLOR_DARK_YELLOW,
-			PIXEL_COLOR_DARK_MAGENTA,
-			PIXEL_COLOR_DARK_CYAN,
-			PIXEL_COLOR_LIGHT_RED,
-			PIXEL_COLOR_LIGHT_GREEN,
-			PIXEL_COLOR_LIGHT_BLUE,
-			PIXEL_COLOR_LIGHT_YELLOW,
-			PIXEL_COLOR_LIGHT_MAGENTA,
-			PIXEL_COLOR_LIGHT_CYAN,
-			PIXEL_COLOR_GREY,
-			PIXEL_COLOR_WHITE
-	};
-
-	Colors = colors;
-	MaxColors = ArrayCount(Colors);
-	colorID = (int)ArrayCount(Colors) - 1;
+	MaxColors = ArrayCount(colors);
+	colorID = MaxColors - 1;
 
 	ColorsX = (int)((screenWidth / 2.0f) - ((colorID * 2) / 2.0f));;
 	ColorsY = 5;
@@ -217,7 +275,7 @@ bool SpriteEditor::Update(float deltaTime)
 			for (int x = 0; x < CursorRadius; ++x)
 			{
 				sprite.Pixels[(y + (int)CursorY) * sprite.Width + (x + (int)CursorX)] = PIXEL_SOLID;
-				sprite.Colors[(y + (int)CursorY) * sprite.Width + (x + (int)CursorX)] = Colors[(int)colorID];
+				sprite.Colors[(y + (int)CursorY) * sprite.Width + (x + (int)CursorX)] = colors[(int)colorID];
 			}
 		}
 	}
@@ -233,6 +291,7 @@ bool SpriteEditor::Update(float deltaTime)
 		}
 	}
 
+	// Rendering
 	renderer.ClearBuffer(PIXEL_COLOR_GREY);
 
 	// Draw Color pallete
@@ -246,7 +305,7 @@ bool SpriteEditor::Update(float deltaTime)
 			renderer.DrawPixel(ColorsX + (i * 2), ColorsY - 1, PIXEL_SOLID, PIXEL_COLOR_DARK_CYAN);
 		}
 
-		renderer.DrawPixel(ColorsX + (i * 2), ColorsY, PIXEL_SOLID, Colors[i]);
+		renderer.DrawPixel(ColorsX + (i * 2), ColorsY, PIXEL_SOLID, *(colors + i));
 	}
 
 	// Draw Canvas
@@ -278,6 +337,9 @@ bool SpriteEditor::Update(float deltaTime)
 		}
 	}
 
+	wchar_t buffer[] = L"Image Size = [%d, %d]";
+	_swprintf_c(renderer.GetRenderBuffers()->Buffer, ArrayCount(buffer), buffer, sprite.Width, sprite.Height);
+	
 	renderer.PresentBuffer();
 
 	return Quit;
@@ -285,6 +347,9 @@ bool SpriteEditor::Update(float deltaTime)
 
 void SpriteEditor::UnloadContent()
 {
-	if (ArrayCount(saveFilename) > 4)
-		WriteFile(persistantHandle, sprite, saveFilename);
+	if (filename)
+	{
+		WriteFile(persistantHandle, sprite, filename);
+		PackFiles(persistantHandle, sprite, filename);
+	}
 }

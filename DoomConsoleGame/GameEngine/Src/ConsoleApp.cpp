@@ -8,8 +8,8 @@ void ConsoleApp::CreateConsole(size_t memorySize, int width, int height, int fon
 	// Initialize our memory pools.
 	Memory::InitializeMemory(memorySize);
 
-	persistantHandle = Memory::InitializeChunk((int)(memorySize * 0.5f));
-	transientHandle = Memory::InitializeChunk((int)(memorySize * 0.5f));
+	persistantHandle = Memory::InitializeChunk((u32)(memorySize * 0.5f));
+	transientHandle = Memory::InitializeChunk((u32)(memorySize * 0.5f));
 
 	// Get handle to a new console window that we can read and write from.
 	consoleHandle = CreateConsoleScreenBuffer(GENERIC_READ | GENERIC_WRITE, 0, 0, CONSOLE_TEXTMODE_BUFFER, 0);
@@ -79,15 +79,87 @@ void ConsoleApp::Run(BaseGame* game)
 {
 	if (game)
 	{
+		HWND window = GetConsoleWindow();
+		Assert(window);
+		HDC dc = GetDC(window);
+		Assert(dc);
+
+		u32 RefreshRate = GetDeviceCaps(dc, VREFRESH);
+		if (RefreshRate < 30)
+		{
+			RefreshRate = 30;
+		}
+		r32 deltaTime = (1.0f / RefreshRate);
+		
+		// NOTE(casey): Set the Windows scheduler granularity to 1ms
+		// so that our Sleep() can be more granular.
+		UINT DesiredSchedulerMS = 1;
+		bool SleepIsGranular = (timeBeginPeriod(DesiredSchedulerMS) == TIMERR_NOERROR);
+
+		LARGE_INTEGER PerformaceFrequency = {};
+		QueryPerformanceFrequency(&PerformaceFrequency);
+
+		LARGE_INTEGER StartCounter = {};
+		QueryPerformanceCounter(&StartCounter);
+
 		game->SetRenderer(renderer);
 		game->LoadContent();
-
-		float deltaTime = 1.0f / 60.0f;
 
 		bool Quit = false;
 		while (!Quit)
 		{
 			Quit = game->Update(deltaTime);
+
+			LARGE_INTEGER WorkCounter = {};
+			QueryPerformanceCounter(&WorkCounter);
+			r32 WorkSecondsElapsed = ((r32)(WorkCounter.QuadPart - StartCounter.QuadPart) / (r32)PerformaceFrequency.QuadPart);
+
+			// TODO(casey): NOT TESTED YET!  PROBABLY BUGGY!!!!!
+			r32 SecondsElapsedForFrame = WorkSecondsElapsed;
+			if (SecondsElapsedForFrame < deltaTime)
+			{
+				if (SleepIsGranular)
+				{
+					DWORD SleepMS = (DWORD)(1000.0f * (deltaTime -
+						SecondsElapsedForFrame));
+					if (SleepMS > 0)
+					{
+						Sleep(SleepMS);
+					}
+				}
+
+				LARGE_INTEGER WallClock = {};
+				QueryPerformanceCounter(&WallClock);
+				r32 TestSecondsElapsedForFrame = ((r32)(WallClock.QuadPart - StartCounter.QuadPart) / (r32)PerformaceFrequency.QuadPart);
+				if (TestSecondsElapsedForFrame < deltaTime)
+				{
+					// TODO(casey): LOG MISSED SLEEP HERE
+				}
+
+				while (SecondsElapsedForFrame < deltaTime)
+				{
+					QueryPerformanceCounter(&WallClock);
+					SecondsElapsedForFrame = ((r32)(WallClock.QuadPart - StartCounter.QuadPart) / (r32)PerformaceFrequency.QuadPart);
+				}
+			}
+			else
+			{
+				// TODO(casey): MISSED FRAME RATE!
+				// TODO(casey): Logging
+			}
+
+			LARGE_INTEGER EndCounter = {};
+			QueryPerformanceCounter(&EndCounter);
+
+			r32 msPerFrame = ((r32)(EndCounter.QuadPart - StartCounter.QuadPart) / (r32)PerformaceFrequency.QuadPart)*1000.0f;
+
+			wchar_t titleFmt[] = L"Console Game Engine - %.02fms/f";
+			wchar_t buffer[256];
+			_swprintf_c(buffer, ArrayCount(titleFmt), titleFmt, msPerFrame);
+			SetConsoleTitleW(buffer);
+
+			StartCounter = EndCounter;
+
 		}
 		game->UnloadContent();
 	}

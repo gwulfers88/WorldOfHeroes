@@ -17,9 +17,16 @@ public:
 	virtual bool Update(float deltaTime) override;
 	virtual void UnloadContent() override;
 
+	void SetFilename(char *fname, bool load = false) { filename = fname; loadFile = load; }
+	void SetImageSize(int W = 100, int H = 100) { ImgWidth = W; ImgHeight = H; };
+
 protected:
 	MemoryHandle persistantHandle;
 	MemoryHandle transientHandle;
+
+	bool loadFile;
+	char *filename;
+	int ImgWidth, ImgHeight;
 
 	int CanvasX;
 	int CanvasY;
@@ -29,7 +36,6 @@ protected:
 	float CursorSpeed;
 	float CursorRadius;
 
-	unsigned short *Colors;
 	int MaxColors;
 	float colorID;
 	int ColorsX;

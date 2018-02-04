@@ -9,6 +9,7 @@ This is the entry point to our progrqam.
 *******************************************************/
 
 #pragma comment(lib, "GameEngine_Debug.lib")
+#pragma comment(lib, "Winmm.lib")
 
 #include "ConsoleApp.h"
 #include "DemoGame.h"
@@ -23,7 +24,7 @@ int main(int argCount, char** args)
 	}
 
 	ConsoleApp App;
-	App.CreateConsole(Megabytes(50), 640, 176, 4, 4);
+	App.CreateConsole(Megabytes(50), 640, 176, 4, 6);
 	DemoGame game = {};
 	App.Run(&game);
 	App.CleanUp();
