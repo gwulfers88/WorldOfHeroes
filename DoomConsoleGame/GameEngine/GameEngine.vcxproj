@@ -127,9 +127,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Src\ConsoleApp.cpp" />
     <ClCompile Include="Src\memory.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Src\BaseGame.h" />
+    <ClInclude Include="Src\ConsoleApp.h" />
     <ClInclude Include="Src\ConsoleRenderer.h" />
     <ClInclude Include="Src\memory.h" />
     <ClInclude Include="Src\platform.h" />

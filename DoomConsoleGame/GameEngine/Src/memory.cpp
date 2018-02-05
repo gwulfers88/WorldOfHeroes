@@ -1,90 +1,59 @@
 #include <memory>
 #include "memory.h"
-#include "platform.h"
-
-struct memory
-{
-	void* base;
-	size_t size;
-	size_t used = 0;
-};
-
-struct memory_chunk
-{
-	void* base;
-	size_t size;
-	size_t used;
-};
 
 #pragma pack(push, 4)
 struct memory_header
 {
-	char id[4];
+	i8 id[4];
 	size_t offset;
 };
 #pragma pack(pop)
 
-#define MAX_MEMORY_CHUNKS 2
-static memory Memory = {};
-static memory_chunk memoryChunks[MAX_MEMORY_CHUNKS] = {};
-static int memoryChunksCount = 0;
+void* Memory::base = 0;
+mem_size Memory::size = 0;
+mem_size Memory::used = 0;
 
-memory AllocateMemory(size_t size)
+i32 Memory::handleCount = 0;
+Memory::memory_chunk Memory::chunks[MAX_MEMORY_CHUNKS];
+
+void Memory::InitializeMemory(mem_size newSize)
 {
-	memory Result = {};
-	Result.base = malloc(size);
-	Result.size = size;
-
-	Assert(Result.base);
-
-	return Result;
+	base = malloc(newSize);
+	size = newSize;
+	used = 0;
+	Assert(base);
 }
 
-void FreeMemory(memory* Memory)
+void Memory::FreeMemory()
 {
-	if (Memory)
-	{
-		if (Memory->base)
-		{
-			free(Memory->base);
-			Memory->size = 0;
-		}
-	}
+	Assert(base);
+	free(base);
+	base = 0;
+	size = 0;
 }
 
-void InitializeMemory(size_t size)
-{
-	Memory = AllocateMemory(size);
-}
-
-void FreeMemory()
-{
-	FreeMemory(&Memory);
-}
-
-MemoryHandle InitializeChunk(size_t size)
+MemoryHandle Memory::InitializeChunk(mem_size size)
 {
 	MemoryHandle handle = 0;
-	
-	if (memoryChunksCount < MAX_MEMORY_CHUNKS)
+	if (handleCount < MAX_MEMORY_CHUNKS)
 	{
-		memory_chunk *Chunk = memoryChunks + memoryChunksCount;
+		memory_chunk* Chunk = chunks + handleCount;
 		Assert(Chunk);
 
-		if (Memory.used + size <= Memory.size)
+		if (used + size <= Memory::size)
 		{
-			if (Memory.base)
+			if (base)
 			{
-				Chunk->base = (char*)Memory.base + Memory.used;
+				Chunk->base = (i8*)base + used;
 				Chunk->size = size;
 				Chunk->used = 0;
 
-				Memory.used += size;
+				used += size;
 
 				memset(Chunk->base, 0, Chunk->size);
 
 				handle = (MemoryHandle)Chunk;
-				memoryChunksCount++;
+				handleCount++;
 			}
 		}
 	}
@@ -92,7 +61,7 @@ MemoryHandle InitializeChunk(size_t size)
 	return handle;
 }
 
-void* PushObject(MemoryHandle handle, size_t AllocSize)
+void* Memory::PushObject(MemoryHandle handle, mem_size AllocSize)
 {
 	void* result = 0;
 	memory_chunk* Chunk = (memory_chunk*)handle;
@@ -102,10 +71,10 @@ void* PushObject(MemoryHandle handle, size_t AllocSize)
 		{
 			if (Chunk->base)
 			{
-				result = ((char*)Chunk->base + Chunk->used);
+				result = ((i8*)Chunk->base + Chunk->used);
 				Chunk->used += AllocSize;
 
-				memory_header *header = (memory_header*)((char*)Chunk->base + Chunk->used);
+				memory_header *header = (memory_header*)((i8*)Chunk->base + Chunk->used);
 				header->id[0] = 'M';
 				header->id[1] = 'E';
 				header->id[2] = 'M';
@@ -119,23 +88,23 @@ void* PushObject(MemoryHandle handle, size_t AllocSize)
 	return result;
 }
 
-bool PullObject(MemoryHandle handle, size_t DallocSize)
+bool Memory::PullObject(MemoryHandle handle, mem_size DallocSize)
 {
 	bool result = false;
 	memory_chunk* Chunk = (memory_chunk*)handle;
 	if (Chunk)
 	{
-		if ((int)(Chunk->used - DallocSize - sizeof(memory_header)) >= 0)
+		if ((i32)(Chunk->used - DallocSize - sizeof(memory_header)) >= 0)
 		{
 			if (Chunk->base)
 			{
-				memory_header* header = (memory_header*)((char*)Chunk->base + Chunk->used - sizeof(memory_header));
+				memory_header* header = (memory_header*)((i8*)Chunk->base + Chunk->used - sizeof(memory_header));
 				if (header)
 				{
 					if (header->offset == DallocSize)
 					{
 						Chunk->used -= DallocSize + sizeof(memory_header);
-						memset(((char*)Chunk->base + Chunk->used), 0, Chunk->size - Chunk->used);
+						memset(((i8*)Chunk->base + Chunk->used), 0, Chunk->size - Chunk->used);
 						result = true;
 					}
 				}
