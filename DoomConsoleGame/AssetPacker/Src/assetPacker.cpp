@@ -2,7 +2,10 @@
 #pragma comment(lib, "GameEngine_Debug.lib")
 
 #include "platform.h"
+#include "File.h"
 #include "Sprite.h"
+
+#include <iostream>
 
 #pragma pack(push, 16)
 struct pack_header
@@ -28,79 +31,8 @@ struct pack
 };
 #pragma pack(pop)
 
-#include <iostream>
-
 char LoadPath[] = "Save/";
 char FileExt[] = ".sprt";
-
-struct FileRead
-{
-	void* Data;
-	long fileSize;
-};
-
-long GetFileSize(FILE* file)
-{
-	fseek(file, 0, SEEK_END);
-	long fileSize = ftell(file);
-	fseek(file, 0, SEEK_SET);
-
-	return fileSize;
-}
-
-#define READ_ENTIRE_FILE(name) FileRead name(MemoryHandle memoryHandle, char* filename)
-typedef READ_ENTIRE_FILE(read_entire_file);
-READ_ENTIRE_FILE(ReadEntireFile)
-{
-	FileRead fileRead = {};
-
-	FILE* file = fopen(filename, "rb");
-	long fileSize = GetFileSize(file);
-	fileRead.fileSize = fileSize;
-	fileRead.Data = CreateVoidPtr(memoryHandle, void, fileSize);
-
-	Assert(fileRead.Data);
-	fread(fileRead.Data, fileSize, 1, file);
-	fclose(file);
-
-	return fileRead;
-}
-
-Sprite LoadSprite(MemoryHandle memoryHandle, char* filename)
-{
-	size_t totalSize = strlen(LoadPath) + strlen(filename) + strlen(FileExt);
-	char* buffer = CreateArray(memoryHandle, char, totalSize);
-	strcat(buffer, LoadPath);
-	strcat(buffer, filename);
-	strcat(buffer, FileExt);
-
-	Sprite sprite = {};
-	FileRead fileRead = ReadEntireFile(memoryHandle, buffer);	// Read the entire file into a buffer
-
-	SpriteHeader* header = (SpriteHeader*)fileRead.Data;	// Fetch the header file
-	Assert(header);	// make sure that we actually got a header 
-
-					// Make sure that the file identifier is set properly other wise this is not a 
-					// SPRT image
-	if (header->Sentinal[0] == 'G' && header->Sentinal[1] == 'W')
-	{
-		Assert(header->FileSize == fileRead.fileSize);	// Make sure that the size of the file matches the headers file size
-		sprite = CreateSprite(memoryHandle, header->Width, header->Height);	// Create sprite object
-		size_t PixelSize = GetPixelSize(sprite);	//Calculate sizes for Pixel array and Color array
-		size_t ColorSize = GetColorSize(sprite);
-
-		sprite.Pixels = (wchar_t*)((char*)fileRead.Data + header->PixelOffset);			// Fetching Pixel data
-		sprite.Colors = (unsigned short*)((char*)fileRead.Data + header->ColorOffset);	// Fetching Color data
-	}
-	else	// This file is not in our SPRT format
-	{
-		MessageBox(0, "Incorrect file format.", "ERROR:", MB_ICONERROR | MB_OK);
-	}
-
-	PullArray(memoryHandle, char, totalSize);	// Release the string buffer we allocated earlier
-
-	return sprite;
-}
 
 int main()
 {
@@ -146,19 +78,20 @@ int main()
 	i32 packFilePosition = PackHeader.DirectoryPosition;
 	pack_file *packFiles = CreateArray(memory, pack_file, numberOfFiles);
 	Sprite *sprites = CreateArray(memory, Sprite, numberOfFiles);
-	FileRead *fileReads = CreateArray(memory, FileRead, numberOfFiles);
+	FileReadData *fileReads = CreateArray(memory, FileReadData, numberOfFiles);
 
-	FILE* saveFile = fopen(Packs.PackName, "wb");
-	Assert(saveFile);
-	fwrite(&PackHeader, sizeof(pack_header), 1, saveFile);
-
+	i32 packHanlde = platform_fileOpen(Packs.PackName, "wb");
+	platform_fileWrite(packHanlde, &PackHeader, sizeof(PackHeader));
+	
 	printf("Saving pack file directories\n");
 	for (int i = 0; i < numberOfFiles; i++)
 	{
 		char name[56] = "Save/";
 		strcat(name, filenames[i]);
-		fileReads[i] = ReadEntireFile(memory, name);
-		
+		i32 fileHandle = platform_fileOpen(name, "rb");
+		fileReads[i] = platform_fileReadEntire(fileHandle);
+		platform_fileClose(fileHandle);
+
 		char pakname[56] = "img/";
 		strcat(pakname, filenames[i]);
 		strcpy(packFiles[i].Filename, pakname);
@@ -167,7 +100,7 @@ int main()
 
 		packFilePosition += sizeof(packFiles[i]);
 
-		fwrite(&packFiles[i], sizeof(pack_file), 1, saveFile);
+		platform_fileWrite(packHanlde, &packFiles[i], sizeof(packFiles[i]));
 	}
 
 	Packs.PackFiles = packFiles;
@@ -175,7 +108,7 @@ int main()
 	printf("Saving image data\n");
 	for (int i = 0; i < numberOfFiles; i++)
 	{
-		FileRead file = fileReads[i];
+		FileReadData file = fileReads[i];
 		SpriteHeader* spriteHeader = (SpriteHeader*)file.Data;
 
 		Sprite *img = sprites + i;
@@ -184,16 +117,22 @@ int main()
 		img->Pixels = (wchar_t*)((i8*)file.Data + spriteHeader->PixelOffset);
 		img->Colors = (u16*)((i8*)file.Data + spriteHeader->ColorOffset);
 
-		fwrite(img, sizeof(Sprite), 1, saveFile);
+		platform_fileWrite(packHanlde, img, sizeof(*img));
 	}
 
 	printf("Saving complete\n");
-	fclose(saveFile);
-
+	platform_fileClose(packHanlde);
 
 	printf("size of long: %d\n\n", sizeof(long));
 
 	system("pause");
+
+	for (int i = 0; i < ArrayCount(fileReads); i++)
+	{
+		free(fileReads[i].Data);
+		fileReads[i].Data = 0;
+		fileReads[i].fileSize = 0;
+	}
 
 	Memory::FreeMemory();
 
