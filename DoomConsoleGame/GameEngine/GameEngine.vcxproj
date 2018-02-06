@@ -128,6 +128,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Src\ConsoleApp.cpp" />
+    <ClCompile Include="Src\ConsoleRenderer.cpp" />
     <ClCompile Include="Src\memory.cpp" />
   </ItemGroup>
   <ItemGroup>

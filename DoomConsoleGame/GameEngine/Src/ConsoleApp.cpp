@@ -1,5 +1,20 @@
 #include "ConsoleApp.h"
 
+static u64 GlobalPerforceFreq = 0;
+
+u64 win32_GetClockTime()
+{
+	LARGE_INTEGER Result;
+	QueryPerformanceCounter(&Result);
+	return Result.QuadPart;
+}
+
+r64 win32_GetSecondsElapsed(u64 Start, u64 End)
+{
+	r64 Result = ((r64)(End - Start) / (r64)GlobalPerforceFreq);
+	return Result;
+}
+
 void ConsoleApp::CreateConsole(size_t memorySize, int width, int height, int fontw, int fonth)
 {
 	screenWidth = width;
@@ -42,13 +57,11 @@ void ConsoleApp::CreateConsole(size_t memorySize, int width, int height, int fon
 	GetConsoleScreenBufferInfo(consoleHandle, &consoleInfo);
 	if (screenWidth > consoleInfo.dwMaximumWindowSize.X)
 	{
-		//MessageBox(0, L"Width is greater than max Width\n", L"ERROR!", MB_OK);
 		screenWidth = consoleInfo.dwMaximumWindowSize.X;
 		goto retry;
 	}
 	if (screenHeight > consoleInfo.dwMaximumWindowSize.Y)
 	{
-		//MessageBox(0, L"Height is greater than max Height\n", L"ERROR!", MB_OK);
 		screenHeight = consoleInfo.dwMaximumWindowSize.Y;
 		goto retry;
 	}
@@ -98,9 +111,9 @@ void ConsoleApp::Run(BaseGame* game)
 
 		LARGE_INTEGER PerformaceFrequency = {};
 		QueryPerformanceFrequency(&PerformaceFrequency);
+		GlobalPerforceFreq = PerformaceFrequency.QuadPart;
 
-		LARGE_INTEGER StartCounter = {};
-		QueryPerformanceCounter(&StartCounter);
+		u64 StartCounter = win32_GetClockTime();
 
 		game->SetRenderer(renderer);
 		game->LoadContent();
@@ -108,11 +121,12 @@ void ConsoleApp::Run(BaseGame* game)
 		bool Quit = false;
 		while (!Quit)
 		{
+			u64 UpdateCounter = win32_GetClockTime();
 			Quit = game->Update(deltaTime);
+			r32 UpdateSecondsElapsed = (r32)win32_GetSecondsElapsed(StartCounter, UpdateCounter) * 1000.0f;
 
-			LARGE_INTEGER WorkCounter = {};
-			QueryPerformanceCounter(&WorkCounter);
-			r32 WorkSecondsElapsed = ((r32)(WorkCounter.QuadPart - StartCounter.QuadPart) / (r32)PerformaceFrequency.QuadPart);
+			u64 WorkCounter = win32_GetClockTime();
+			r32 WorkSecondsElapsed = (r32)win32_GetSecondsElapsed(StartCounter, WorkCounter);
 
 			// TODO(casey): NOT TESTED YET!  PROBABLY BUGGY!!!!!
 			r32 SecondsElapsedForFrame = WorkSecondsElapsed;
@@ -128,9 +142,7 @@ void ConsoleApp::Run(BaseGame* game)
 					}
 				}
 
-				LARGE_INTEGER WallClock = {};
-				QueryPerformanceCounter(&WallClock);
-				r32 TestSecondsElapsedForFrame = ((r32)(WallClock.QuadPart - StartCounter.QuadPart) / (r32)PerformaceFrequency.QuadPart);
+				r32 TestSecondsElapsedForFrame = (r32)win32_GetSecondsElapsed(StartCounter, win32_GetClockTime());
 				if (TestSecondsElapsedForFrame < deltaTime)
 				{
 					// TODO(casey): LOG MISSED SLEEP HERE
@@ -138,8 +150,7 @@ void ConsoleApp::Run(BaseGame* game)
 
 				while (SecondsElapsedForFrame < deltaTime)
 				{
-					QueryPerformanceCounter(&WallClock);
-					SecondsElapsedForFrame = ((r32)(WallClock.QuadPart - StartCounter.QuadPart) / (r32)PerformaceFrequency.QuadPart);
+					SecondsElapsedForFrame = (r32)win32_GetSecondsElapsed(StartCounter, win32_GetClockTime());
 				}
 			}
 			else
@@ -148,14 +159,13 @@ void ConsoleApp::Run(BaseGame* game)
 				// TODO(casey): Logging
 			}
 
-			LARGE_INTEGER EndCounter = {};
-			QueryPerformanceCounter(&EndCounter);
+			u64 EndCounter = win32_GetClockTime();
+			r32 msPerFrame = (r32)win32_GetSecondsElapsed(StartCounter, EndCounter)*1000.0f;
+			r32 framesPerSecond = 1.0f / (r32)win32_GetSecondsElapsed(StartCounter, EndCounter);
 
-			r32 msPerFrame = ((r32)(EndCounter.QuadPart - StartCounter.QuadPart) / (r32)PerformaceFrequency.QuadPart)*1000.0f;
-
-			wchar_t titleFmt[] = L"Console Game Engine - %.02fms/f";
+			wchar_t titleFmt[] = L"Console Game Engine - %.02fms/f %.02ffps - update loop: %.02fms/f";
 			wchar_t buffer[256];
-			_swprintf_c(buffer, ArrayCount(titleFmt), titleFmt, msPerFrame);
+			_swprintf_c(buffer, ArrayCount(titleFmt), titleFmt, msPerFrame, framesPerSecond, UpdateSecondsElapsed);
 			SetConsoleTitleW(buffer);
 
 			StartCounter = EndCounter;
