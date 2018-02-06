@@ -190,6 +190,9 @@ int main()
 	printf("Saving complete\n");
 	fclose(saveFile);
 
+
+	printf("size of long: %d\n\n", sizeof(long));
+
 	system("pause");
 
 	Memory::FreeMemory();

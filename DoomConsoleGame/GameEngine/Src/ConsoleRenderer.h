@@ -17,11 +17,11 @@ render the current game
 #pragma pack(push, 16)
 struct ScreenBuffer
 {
-	int Width;
-	int Height;
+	i32 Width;
+	i32 Height;
 	wchar_t *Buffer;
-	WORD	*Attribs;
-	float	*DepthBuffer;
+	u16		*Attribs;
+	r32		*DepthBuffer;
 	HANDLE	consoleHandle;
 };
 #pragma pack(pop)
@@ -53,81 +53,19 @@ struct ScreenBuffer
 class ConsoleRenderer
 {
 public:
-	ConsoleRenderer() {}
-	~ConsoleRenderer() {}
+	ConsoleRenderer();
+	~ConsoleRenderer();
 	
-	ScreenBuffer* GetRenderBuffers() { return screen; }
-
-	void SetScreenBuffer(ScreenBuffer *_screen)
-	{
-		screen = _screen;
-		Assert(screen);
-		// Check to see if we were able to allocate memory from our pool.
-		Assert(screen->Buffer);
-		Assert(screen->Attribs);
-		Assert(screen->DepthBuffer);
-	}
-
+	ScreenBuffer* GetRenderBuffers();
+	void SetScreenBuffer(ScreenBuffer *_screen);
 	// Draws a single pixel onto the screen buffer using the desired x, y position, type of pixel and color.
-	void DrawPixel(int x, int y, wchar_t pixel = PIXEL_SOLID, unsigned short color = PIXEL_COLOR_WHITE)
-	{
-		if (x < 0)
-		{
-			x = 0;
-		}
-		if (x >= screen->Width)
-		{
-			x = screen->Width - 1;
-		}
-		if (y < 0)
-		{
-			y = 0;
-		}
-		if (y >= screen->Height)
-		{
-			y = screen->Height - 1;
-		}
-
-		screen->Buffer[y * screen->Width + x] = pixel;
-		screen->Attribs[y * screen->Width + x] = color;
-	}
-
+	void DrawPixel(i32 x, i32 y, wchar_t pixel = PIXEL_SOLID, u16 color = PIXEL_COLOR_WHITE);
 	// Draws a sprite onto the screen buffer using desired x, y pos and color.
-	void DrawSprite(int posX, int posY, int spriteW, int spriteH, wchar_t* spriteData, unsigned short *colorData)
-	{
-		for (int col = 0; col < spriteH; ++col)
-		{
-			for (int row = 0; row < spriteW; ++row)
-			{
-				int pixelX = posX + row;
-				int pixelY = posY + col;
-				wchar_t glyph = spriteData[col * spriteW + row];
-				unsigned short color = colorData[col * spriteW + row];
-				DrawPixel(pixelX, pixelY, glyph, color);
-			}
-		}
-	}
-
+	void DrawSprite(i32 posX, i32 posY, i32 spriteW, i32 spriteH, wchar_t* spriteData, u16 *colorData);
 	// Clears the entire screen buffer to the desired color.
-	void ClearBuffer(short color = PIXEL_COLOR_BLACK)
-	{
-		for (int y = 0; y < screen->Height; ++y)
-		{
-			for (int x = 0; x < screen->Width; ++x)
-			{
-				DrawPixel(x, y, PIXEL_SOLID, color);
-			}
-		}
-	}
-
+	void ClearBuffer(u16 color = PIXEL_COLOR_BLACK);
 	// Draws the entire buffer to the screen
-	void PresentBuffer()
-	{
-		DWORD bytesWritten = 0;
-		screen->Buffer[screen->Width * screen->Height - 1] = '\0';
-		WriteConsoleOutputCharacter(screen->consoleHandle, screen->Buffer, screen->Width * screen->Height, { 0, 0 }, &bytesWritten);
-		WriteConsoleOutputAttribute(screen->consoleHandle, screen->Attribs, screen->Width * screen->Height, { 0, 0 }, &bytesWritten);
-	}
+	void PresentBuffer();
 
 protected:
 	ScreenBuffer *screen;
