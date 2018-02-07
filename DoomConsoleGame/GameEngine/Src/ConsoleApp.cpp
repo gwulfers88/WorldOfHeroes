@@ -1,20 +1,5 @@
 #include "ConsoleApp.h"
 
-static u64 GlobalPerforceFreq = 0;
-
-u64 win32_GetClockTime()
-{
-	LARGE_INTEGER Result;
-	QueryPerformanceCounter(&Result);
-	return Result.QuadPart;
-}
-
-r64 win32_GetSecondsElapsed(u64 Start, u64 End)
-{
-	r64 Result = ((r64)(End - Start) / (r64)GlobalPerforceFreq);
-	return Result;
-}
-
 void ConsoleApp::CreateConsole(size_t memorySize, int width, int height, int fontw, int fonth)
 {
 	screenWidth = width;

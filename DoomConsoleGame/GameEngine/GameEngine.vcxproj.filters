@@ -36,5 +36,8 @@
     <ClInclude Include="Src\BaseGame.h">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="Src\File.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
