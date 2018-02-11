@@ -1,0 +1,76 @@
+Progress Update:
+
+GameEngine:
+	Memory Manager
+		alloc main buffer
+		partition main buffer
+		access memory through handles
+		create objects through memory handles
+		delete objects through memory handles
+		Free main buffer
+		----- Need -----
+		create private memory to avoid deletion of console buffers
+		or create separate partition for this memory.
+		ability to reuse temp memory partition.
+	Renderer
+		Ray casting for 3D projection
+		Drawing pixels
+		Drawing Sprites
+		Clearing buffers
+		---- Need ----
+		Draw rectangles
+		Draw Lines
+		Creaete Render queue system to not use renderer directly.
+	File System
+		open file handle
+		read bytes from file handle
+		read entire bytes from file 
+		Keep track of file handles (10)
+	Pak File System
+		Pack file structure
+		Write pack files
+		--- Need ---
+		read pack files
+		make data structure to hold pack data
+	Sprite
+		Load Sprite
+		Save Sprite
+		Sprite file structure
+	Console App
+		Creates and initializes app systems
+		Call the BaseGame class routines on the run function
+		Calculates the cycles per frame in ms
+		Clean up App
+	BaseGame 
+		Load Game Content
+		Update loop
+		Unload Game Content
+---- Need ----
+	Asset file loader
+	Console event handler
+	[Keyboard messages]
+	Sound System
+	Screen System
+	Generic Object class
+	
+Sprite Editor Tool
+	load or create blank canvas
+	paint 
+	save sprite image
+AssetPack Tool
+	Load files into memory
+	Pack files
+	write pack files
+
+Doom Game
+	Load map data
+	Load sprite objects
+	Project 2D map into 3D world
+	move around
+	simple world collision
+	simple keyboard events
+	Project objects to world
+	---- Need ----
+	Enemies
+	AI System
+	Shooting
