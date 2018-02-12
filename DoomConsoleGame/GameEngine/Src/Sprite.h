@@ -26,7 +26,7 @@ struct Sprite
 };
 #pragma pack(pop)
 
-Sprite CreateSprite(MemoryHandle memory, i32 W, i32 H)
+internal_ Sprite CreateSprite(MemoryHandle memory, i32 W, i32 H)
 {
 	Sprite sprite = {};
 	size_t TotalSize = W * H;
@@ -42,19 +42,19 @@ Sprite CreateSprite(MemoryHandle memory, i32 W, i32 H)
 	return sprite;
 }
 
-size_t GetPixelSize(Sprite sprite)
+internal_ size_t GetPixelSize(Sprite sprite)
 {
 	size_t PixelSize = sprite.Width * sprite.Height * sizeof(wchar_t);
 	return PixelSize;
 }
 
-size_t GetColorSize(Sprite sprite)
+internal_ size_t GetColorSize(Sprite sprite)
 {
 	size_t ColorSize = sprite.Width * sprite.Height * sizeof(u16);
 	return ColorSize;
 }
 
-SpriteHeader GetSpriteHeader(Sprite sprite)
+internal_ SpriteHeader GetSpriteHeader(Sprite sprite)
 {
 	SpriteHeader header = {};
 

@@ -1,7 +1,5 @@
 #include "Player.h"
 
-
-
 Player::Player(i8* name)
 	: _health(0),
 	_armor(0),
@@ -27,14 +25,14 @@ void Player::setHealth(i32 health) {
 
 // Getter Functions
 i32 Player::getAmmo() {
-
+	return 0;
 }
 
 i32 Player::getArmor() {
-
+	return 0;
 }
 
 i32 Player::getHealth() {
-
+	return 0;
 }
 
