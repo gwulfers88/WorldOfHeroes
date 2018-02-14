@@ -45,6 +45,9 @@ public:
 	// releases memory from partition
 	static bool PullObject(MemoryHandle handle, mem_size DallocSize);
 
+	static MemoryHandle GetPersistantHandle() { return chunks + 0; }
+	static MemoryHandle GetTransientHandle() { return chunks + 1; }
+
 private:
 	static void* base;
 	static mem_size size;

@@ -1,7 +1,5 @@
 #include "Player.h"
 
-
-
 Player::Player(i8* name)
 	: _health(0),
 	_armor(0),
@@ -96,5 +94,6 @@ i32 Player::getMaxAmmo() const {
 
 i8* Player::getCurWeapons() const {
 	return _weapons[_curWeaponsIndex];
-}
+{
+
 

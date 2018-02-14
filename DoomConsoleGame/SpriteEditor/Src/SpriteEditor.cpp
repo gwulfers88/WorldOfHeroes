@@ -1,5 +1,6 @@
 #include "SpriteEditor.h"
 #include "Sprite.h"
+#include "File.h"
 
 Sprite sprite;
 char Path[] = "Save/";
@@ -21,71 +22,28 @@ struct pak_file
 };
 #pragma pack(pop)
 
-struct FileRead
+// Save image to disk
+void SaveSprite(Sprite* sprite, char* filename)
 {
-	void* Data;
-	long fileSize;
-};
+	// open a file and get the file handle
+	i32 fileHandle = platform_fileOpen(filename, "wb");
 
-long GetFileSize(FILE* file)
-{
-	fseek(file, 0, SEEK_END);
-	long fileSize = ftell(file);
-	fseek(file, 0, SEEK_SET);
+	// Get the header of the sprite structure
+	SpriteHeader header = GetSpriteHeader(*sprite);
 
-	return fileSize;
+	// Save all of the data we need
+	platform_fileWrite(fileHandle, &header, sizeof(header));
+	platform_fileWrite(fileHandle, sprite->Pixels, GetPixelSize(*sprite));
+	platform_fileWrite(fileHandle, sprite->Colors, GetColorSize(*sprite));
+
+	// close the file
+	platform_fileClose(fileHandle);
 }
 
-FILE* image = 0;
-
-#define WRITE_ENTIRE_FILE(name) void name(MemoryHandle memoryHandle, Sprite sprite, char* filename)
-typedef WRITE_ENTIRE_FILE(write_entire_file);
-
-void WriteFile(MemoryHandle memoryHandle, Sprite sprite, char* filename)
-{
-	size_t totalSize = strlen(Path) + strlen(filename) + strlen(fileExt);
-	char* buffer = CreateArray(memoryHandle, char, totalSize);
-	strcat(buffer, Path);
-	strcat(buffer, filename);
-	strcat(buffer, fileExt);
-
-	fopen_s(&image, buffer, "wb");
-	Assert(image);
-
-	size_t TotalPixelSize = GetPixelSize(sprite);
-	size_t TotalColorSize = GetColorSize(sprite);
-
-	SpriteHeader header = GetSpriteHeader(sprite);
-
-	fwrite(&header, sizeof(SpriteHeader), 1, image);
-	fwrite(sprite.Pixels, TotalPixelSize, 1, image);
-	fwrite(sprite.Colors, TotalColorSize, 1, image);
-
-	fclose(image);
-
-	PullArray(memoryHandle, char, totalSize);
-}
-
-#define READ_ENTIRE_FILE(name) FileRead name(MemoryHandle memoryHandle, char* filename)
-typedef READ_ENTIRE_FILE(read_entire_file);
-READ_ENTIRE_FILE(ReadEntireFile)
-{
-	FileRead fileRead = {};
-
-	FILE* file = fopen(filename, "rb");
-	long fileSize = GetFileSize(file);
-	fileRead.fileSize = fileSize;
-	fileRead.Data = CreateVoidPtr(memoryHandle, void, fileSize);
-
-	Assert(fileRead.Data);
-	fread(fileRead.Data, fileSize, 1, file);
-	fclose(file);
-
-	return fileRead;
-}
-
+// Loads a sprite with a certain name from disk
 Sprite LoadSprite(MemoryHandle memoryHandle, char* filename)
 {
+	// Generate the path string
 	size_t totalSize = strlen(Path) + strlen(filename) + strlen(fileExt);
 	char* buffer = CreateArray(memoryHandle, char, totalSize);
 	strcat(buffer, Path);
@@ -93,14 +51,16 @@ Sprite LoadSprite(MemoryHandle memoryHandle, char* filename)
 	strcat(buffer, fileExt);
 
 	Sprite sprite = {};
-	FileRead fileRead = ReadEntireFile(memoryHandle, buffer);	// Read the entire file into a buffer
+	i32 fileHandle = platform_fileOpen(buffer, "rb");				// Load the file into memory
+	FileReadData fileRead = platform_fileReadEntire(fileHandle);	// Read the entire file into a buffer
+	platform_fileClose(fileHandle);									// Close the file
 
 	SpriteHeader* header = (SpriteHeader*)fileRead.Data;	// Fetch the header file
 	Assert(header);	// make sure that we actually got a header 
 
 					// Make sure that the file identifier is set properly other wise this is not a 
 					// SPRT image
-	if (header->Sentinal[0] == 'G' && header->Sentinal[1] == 'W')
+	if (header->Sentinal[0] == 'S' && header->Sentinal[1] == 'P' && header->Sentinal[2] == 'R' && header->Sentinal[3] == 'T')
 	{
 		Assert(header->FileSize == fileRead.fileSize);	// Make sure that the size of the file matches the headers file size
 		sprite = CreateSprite(memoryHandle, header->Width, header->Height);	// Create sprite object
@@ -112,7 +72,7 @@ Sprite LoadSprite(MemoryHandle memoryHandle, char* filename)
 	}
 	else	// This file is not in our SPRT format
 	{
-		MessageBox(0, L"Incorrect file format.", L"ERROR:", MB_ICONERROR | MB_OK);
+		MessageBox(0, L"Incorrect file format.", L"ERROR:", MB_ICONERROR | MB_OKCANCEL);
 	}
 
 	PullArray(memoryHandle, char, totalSize);	// Release the string buffer we allocated earlier
@@ -138,41 +98,6 @@ unsigned short colors[] =
 	PIXEL_COLOR_GREY,
 	PIXEL_COLOR_WHITE
 };
-
-void PackFiles(MemoryHandle memoryHandle, Sprite image, char *filename)
-{
-	size_t totalSize = strlen(Path) + strlen(filename) + strlen(fileExt);
-	char* buffer = CreateArray(memoryHandle, char, totalSize);
-	strcat(buffer, Path);
-	strcat(buffer, filename);
-	strcat(buffer, fileExt);
-
-	pak_header header = {};
-	header.id[0] = 'P';
-	header.id[1] = 'A';
-	header.id[2] = 'C';
-	header.id[3] = 'K';
-
-	header.offset = sizeof(pak_header);
-	header.fileSize = sizeof(pak_file);
-
-	pak_file file = {};
-	strcpy(file.filename, buffer);
-	file.offset = header.offset + sizeof(pak_file);
-	file.fileSize = sizeof(image);
-
-	FILE* pakFile = fopen("Save/test.pak", "wb");
-	if (pakFile)
-	{
-		fwrite(&header, sizeof(header), 1, pakFile);
-		fwrite(&file, sizeof(file), 1, pakFile);
-		fwrite(&image, sizeof(image), 1, pakFile);
-
-		fclose(pakFile);
-	}
-
-	PullArray(memoryHandle, char, totalSize);
-}
 
 void SpriteEditor::LoadContent()
 {
@@ -349,7 +274,6 @@ void SpriteEditor::UnloadContent()
 {
 	if (filename)
 	{
-		WriteFile(persistantHandle, sprite, filename);
-		PackFiles(persistantHandle, sprite, filename);
+		SaveSprite(&sprite, filename);		// Save the file on exit
 	}
 }
