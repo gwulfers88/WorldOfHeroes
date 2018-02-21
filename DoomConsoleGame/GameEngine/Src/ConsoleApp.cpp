@@ -157,6 +157,81 @@ void ConsoleApp::Run(BaseGame* game)
 				}
 			}
 
+
+			game_controller Controller = {};
+
+			// Update key information
+			for (u32 key = 0; key < 256; key++)
+			{
+				if (key == 'W')
+				{
+					if ((GetAsyncKeyState(key) & 0x8000))
+					{
+						Controller.MoveUp.pressed = true;
+					}
+					else
+					{
+						Controller.MoveUp.pressed = false;
+					}
+				}
+				if (key == 'A')
+				{
+					if ((GetAsyncKeyState(key) & 0x8000))
+					{
+						Controller.MoveLeft.pressed = true;
+					}
+					else
+					{
+						Controller.MoveLeft.pressed = false;
+					}
+				}
+				if (key == 'S')
+				{
+					if ((GetAsyncKeyState(key) & 0x8000))
+					{
+						Controller.MoveDown.pressed = true;
+					}
+					else
+					{
+						Controller.MoveDown.pressed = false;
+					}
+				}
+				if (key == 'D')
+				{
+					if ((GetAsyncKeyState(key) & 0x8000))
+					{
+						Controller.MoveRight.pressed = true;
+					}
+					else
+					{
+						Controller.MoveRight.pressed = false;
+					}
+				}
+				if (key == 'Q')
+				{
+					if ((GetAsyncKeyState(key) & 0x8000))
+					{
+						Controller.ActionLeft.pressed = true;
+					}
+					else
+					{
+						Controller.ActionLeft.pressed = false;
+					}
+				}
+				if (key == 'E')
+				{
+					if ((GetAsyncKeyState(key) & 0x8000))
+					{
+						Controller.ActionRight.pressed = true;
+					}
+					else
+					{
+						Controller.ActionRight.pressed = false;
+					}
+				}
+			}
+
+			game->SetController(&Controller);
 			Quit = game->Update(deltaTime);
 			r32 UpdateSecondsElapsed = (r32)win32_GetSecondsElapsed(StartCounter, UpdateCounter) * 1000.0f;
 

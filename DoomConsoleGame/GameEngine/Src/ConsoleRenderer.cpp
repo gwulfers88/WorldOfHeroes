@@ -39,6 +39,17 @@ void ConsoleRenderer::DrawPixel(i32 x, i32 y, wchar_t pixel, u16 color)
 	screen->Attribs[y * screen->Width + x] = color;
 }
 
+void ConsoleRenderer::DrawRect(i32 x, i32 y, i32 w, i32 h, wchar_t pixel, u16 color)
+{
+	for (u32 row = y; row < h; row++)
+	{
+		for (u32 col = x; col < w; col++)
+		{
+			DrawPixel(col, row, pixel, color);
+		}
+	}
+}
+
 // Draws a sprite onto the screen buffer using desired x, y pos and color.
 void ConsoleRenderer::DrawSprite(i32 posX, i32 posY, i32 spriteW, i32 spriteH, wchar_t* spriteData, u16 *colorData)
 {

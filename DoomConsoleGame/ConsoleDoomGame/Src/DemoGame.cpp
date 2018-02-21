@@ -16,7 +16,7 @@ void DemoGame::LoadContent()
 	map =
 	{
 		L"########################################"
-		L"#......................................#"
+		L"#..........D...........................#"
 		L"#..........#######.....................#"
 		L"#..........#.....#.....................#"
 		L"#......S...#.....#.....................#"
@@ -24,8 +24,8 @@ void DemoGame::LoadContent()
 		L".................#.....................#"
 		L".................#.....................#"
 		L".................#.....................#"
-		L".......................................#"
-		L".......................................#"
+		L".................D.....................#"
+		L".................D.....................#"
 		L".................#.....................#"
 		L".................#.....................#"
 		L".................#.....................#"
@@ -77,8 +77,6 @@ void DemoGame::LoadContent()
 	}
 }
 
-float playerHeight = 0.0f;
-
 bool DemoGame::Update(float deltaTime)
 {
 	bool Quit = false;
@@ -87,73 +85,67 @@ bool DemoGame::Update(float deltaTime)
 
 	float playerSpeed = 10.0f;
 
-	if (GetAsyncKeyState((u16)VK_UP) & 0x8000)
+	if (Controller)
 	{
-		playerHeight += playerSpeed * deltaTime;
-	}
-	else if(GetAsyncKeyState((u16)VK_DOWN) & 0x8000)
-	{
-		playerHeight -= playerSpeed * deltaTime;
-	}
-
-	// Forward / Backward Movement
-	if (GetAsyncKeyState((unsigned short)L'W') & 0x8000)
-	{
-		playerX += sinf(playerAngle) * playerSpeed * deltaTime;
-		playerY += cosf(playerAngle) * playerSpeed * deltaTime;
-
-		if (map[(int)playerY * mapW + (int)playerX] == L'#')
-		{
-			playerX -= sinf(playerAngle) * playerSpeed * deltaTime;
-			playerY -= cosf(playerAngle) * playerSpeed * deltaTime;
-		}
-	}
-	else if (GetAsyncKeyState((unsigned short)L'S') & 0x8000)
-	{
-		playerX -= sinf(playerAngle) * playerSpeed * deltaTime;
-		playerY -= cosf(playerAngle) * playerSpeed * deltaTime;
-
-		if (map[(int)playerY * mapW + (int)playerX] == L'#')
+		// Forward / Backward Movement
+		if (Controller->MoveUp.pressed)
 		{
 			playerX += sinf(playerAngle) * playerSpeed * deltaTime;
 			playerY += cosf(playerAngle) * playerSpeed * deltaTime;
+
+			if (map[(int)playerY * mapW + (int)playerX] == L'#')
+			{
+				playerX -= sinf(playerAngle) * playerSpeed * deltaTime;
+				playerY -= cosf(playerAngle) * playerSpeed * deltaTime;
+			}
 		}
-	}
-
-	// Roatting the Angle CCW / CW
-	if (GetAsyncKeyState((unsigned short)L'A') & 0x8000)
-	{
-		playerAngle -= (playerSpeed * 0.75f) * deltaTime;
-	}
-	else if (GetAsyncKeyState((unsigned short)L'D') & 0x8000)
-	{
-		playerAngle += (playerSpeed * 0.75f) * deltaTime;
-	}
-
-	// Straffe Movement
-	if (GetAsyncKeyState((unsigned short)L'Q') & 0x8000)
-	{
-		playerX -= cosf(playerAngle) * playerSpeed * deltaTime;
-		playerY += sinf(playerAngle) * playerSpeed * deltaTime;
-
-		if (map[(int)playerY * mapW + (int)playerX] == L'#')
+		else if (Controller->MoveDown.pressed)
 		{
-			playerX += cosf(playerAngle) * playerSpeed * deltaTime;
-			playerY -= sinf(playerAngle) * playerSpeed * deltaTime;
-		}
-	}
-	else if (GetAsyncKeyState((unsigned short)L'E') & 0x8000)
-	{
-		playerX += cosf(playerAngle) * playerSpeed * deltaTime;
-		playerY -= sinf(playerAngle) * playerSpeed * deltaTime;
+			playerX -= sinf(playerAngle) * playerSpeed * deltaTime;
+			playerY -= cosf(playerAngle) * playerSpeed * deltaTime;
 
-		if (map[(int)playerY * mapW + (int)playerX] == L'#')
+			if (map[(int)playerY * mapW + (int)playerX] == L'#')
+			{
+				playerX += sinf(playerAngle) * playerSpeed * deltaTime;
+				playerY += cosf(playerAngle) * playerSpeed * deltaTime;
+			}
+		}
+
+		// Roatting the Angle CCW / CW
+		if (Controller->MoveLeft.pressed)
+		{
+			playerAngle -= (playerSpeed * 0.75f) * deltaTime;
+		}
+		else if (Controller->MoveRight.pressed)
+		{
+			playerAngle += (playerSpeed * 0.75f) * deltaTime;
+		}
+
+		// Straffe Movement
+		if (Controller->ActionLeft.pressed)
 		{
 			playerX -= cosf(playerAngle) * playerSpeed * deltaTime;
 			playerY += sinf(playerAngle) * playerSpeed * deltaTime;
+
+			if (map[(int)playerY * mapW + (int)playerX] == L'#')
+			{
+				playerX += cosf(playerAngle) * playerSpeed * deltaTime;
+				playerY -= sinf(playerAngle) * playerSpeed * deltaTime;
+			}
+		}
+		else if (Controller->ActionRight.pressed)
+		{
+			playerX += cosf(playerAngle) * playerSpeed * deltaTime;
+			playerY -= sinf(playerAngle) * playerSpeed * deltaTime;
+
+			if (map[(int)playerY * mapW + (int)playerX] == L'#')
+			{
+				playerX -= cosf(playerAngle) * playerSpeed * deltaTime;
+				playerY += sinf(playerAngle) * playerSpeed * deltaTime;
+			}
 		}
 	}
-	
+
 	// Clear buffer to certain color
 	//ClearBuffer(PIXEL_COLOR_GREY);
 
@@ -175,12 +167,17 @@ bool DemoGame::Update(float deltaTime)
 		float EyeX = sinf(RayAngle);
 		float EyeY = cosf(RayAngle);
 
+		short Color = PIXEL_COLOR_WHITE;
+
 		while (!HitWall && DistanceToWall < depth)
 		{
 			DistanceToWall += StepSize;
 
-			int TestX = (int)(playerX + EyeX * DistanceToWall);
-			int TestY = (int)(playerY + EyeY * DistanceToWall);
+			i32 TestX = (playerX + EyeX * DistanceToWall);
+			i32 TestY = (playerY + EyeY * DistanceToWall);
+
+			r32 DX = (playerX + EyeX * DistanceToWall);
+			r32 DY = (playerY + EyeY * DistanceToWall);
 
 			// Our ray has gone Out of bounds
 			if (TestX < 0 || TestX >= mapW || TestY < 0 || TestY >= mapH)
@@ -191,10 +188,13 @@ bool DemoGame::Update(float deltaTime)
 			else
 			{
 				// Ray is still in bounds to test cell for walls
-				if (map[TestY * mapW + TestX] == L'#')
+				if (map[(i32)TestY * mapW + (i32)TestX] == L'#')
 				{
 					// Ray has hit a wall
 					HitWall = true;
+
+					// Calculate the Texture coordinates here.
+					Color = PIXEL_COLOR_DARK_CYAN;
 
 					// Calculate Boundaries of walls
 					// To highlight tile boundaries, cast a ray from each corner
@@ -225,38 +225,51 @@ bool DemoGame::Update(float deltaTime)
 					if (acos(p.at(1).second) < Bound) Boundary = true;
 					//if (acos(p.at(2).second) < Bound) Boundary = true;
 				}
+				// Ray is still in bounds to test cell for Doors
+				else if (map[(i32)TestY * mapW + (i32)TestX] == L'D')
+				{
+					r32 Dh = TestX + 0.5f;
+
+					if (DX > Dh - 0.05f && DX < Dh + 0.05f)
+					{
+						// Calculate the Texture coordinates here.
+						Color = PIXEL_COLOR_DARK_MAGENTA;
+
+						// Ray has hit a wall
+						HitWall = true;
+					}
+				}
 			}
 		}
 
 		// Calculate the distance to the ceiling
 		int DistanceToCeiling = (((float)screenHeight / 2) - ((float)screenHeight / DistanceToWall));
 		int DistanceToFloor = (screenHeight - DistanceToCeiling);
-
+		
 		renderer.GetRenderBuffers()->DepthBuffer[x] = DistanceToWall;
 
 		// Shade walls based on distance 
 		wchar_t shade = PIXEL_SOLID;
-		short Color = PIXEL_COLOR_WHITE;
-
+		
 		if (DistanceToWall <= depth / 4)
 		{
 			shade = PIXEL_SOLID;
-			Color = PIXEL_COLOR_WHITE;
+			//Color = PIXEL_COLOR_WHITE;
 		}
 		else if (DistanceToWall < depth / 3)
 		{
 			shade = PIXEL_SEMI_DARK;
-			Color = PIXEL_COLOR_WHITE;
+			//Color = PIXEL_COLOR_WHITE;
 		}
 		else if (DistanceToWall < depth / 2)
 		{
 			shade = PIXEL_MEDIUM_DARK;
-			Color = PIXEL_COLOR_GREY;
+			//Color = PIXEL_COLOR_GREY;
 		}
 		else
 		{
 			shade = PIXEL_DARK;
-			Color = PIXEL_COLOR_BLACK;
+			//Color = PIXEL_COLOR_BLACK;
 		}
 
 		if (Boundary)
@@ -282,22 +295,22 @@ bool DemoGame::Update(float deltaTime)
 				if (b < 0.25)
 				{
 					shade = PIXEL_SOLID;
-					Color = PIXEL_COLOR_GREY;
+					Color = PIXEL_COLOR_DARK_GREEN;
 				}
 				else if (b < 0.5)
 				{
 					shade = PIXEL_SEMI_DARK;
-					Color = PIXEL_COLOR_GREY;
+					Color = PIXEL_COLOR_DARK_GREEN;
 				}
 				else if (b < 0.75)
 				{
 					shade = PIXEL_MEDIUM_DARK;
-					Color = PIXEL_COLOR_GREY;
+					Color = PIXEL_COLOR_DARK_GREEN;
 				}
 				else if (b < 0.9)
 				{
 					shade = PIXEL_DARK;
-					Color = PIXEL_COLOR_GREY;
+					Color = PIXEL_COLOR_DARK_GREEN;
 				}
 				renderer.DrawPixel(x, y, shade, Color);
 			}

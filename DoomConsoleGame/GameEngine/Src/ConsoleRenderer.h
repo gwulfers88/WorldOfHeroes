@@ -60,6 +60,8 @@ public:
 	void SetScreenBuffer(ScreenBuffer *_screen);
 	// Draws a single pixel onto the screen buffer using the desired x, y position, type of pixel and color.
 	void DrawPixel(i32 x, i32 y, wchar_t pixel = PIXEL_SOLID, u16 color = PIXEL_COLOR_WHITE);
+	// Draws a rectangle on the buffer
+	void DrawRect(i32 x, i32 y, i32 w, i32 h, wchar_t pixel = PIXEL_SOLID, u16 color = PIXEL_COLOR_WHITE);
 	// Draws a sprite onto the screen buffer using desired x, y pos and color.
 	void DrawSprite(i32 posX, i32 posY, i32 spriteW, i32 spriteH, wchar_t* spriteData, u16 *colorData);
 	// Clears the entire screen buffer to the desired color.
