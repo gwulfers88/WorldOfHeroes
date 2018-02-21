@@ -1,5 +1,6 @@
 #include "DemoGame.h"
 #include "platform.h"
+#include "File.h"
 
 void DemoGame::LoadContent()
 {
@@ -36,25 +37,33 @@ void DemoGame::LoadContent()
 		L".................#######################"
 	};
 
-	SpriteX = 27.5f;
-	SpriteY = 5.5f;
-	SpriteW = 14;
-	SpriteH = 10;
-
-	Sprite =
+	// Load the pillar
+	int pillarHandle = platform_fileOpen("data/pillar_01.sprt", "rb");
+	FileReadData pillarData = platform_fileReadEntire(pillarHandle);
+	platform_fileClose(pillarHandle);
+	SpriteHeader* pillarHeader = (SpriteHeader*)pillarData.Data;
+	if (pillarHeader)
 	{
-		L"              "
-		L"              "
-		L"              "
-		L"              "
-		L"              "
-		L"              "
-		L"     ####     "
-		L"     ####     "
-		L"   ########   "
-		L"  ##########  "
-	};
+		if (pillarHeader->Sentinal[0] == 'S' && pillarHeader->Sentinal[1] == 'P' && pillarHeader->Sentinal[2] == 'R' && pillarHeader->Sentinal[3] == 'T')
+		{
+			pillar.Width = pillarHeader->Width;
+			pillar.Height = pillarHeader->Height;
+			u16* colors = (u16*)((u8*)pillarData.Data + pillarHeader->ColorOffset);
+			wchar_t* pixels = (wchar_t*)((u8*)pillarData.Data + pillarHeader->PixelOffset);
+			pillar.Colors = CreateArray(Memory::GetPersistantHandle(), u16, pillar.Width * pillar.Height);
+			pillar.Pixels = CreateArray(Memory::GetPersistantHandle(), wchar_t, pillar.Width * pillar.Height);
 
+			memcpy_s(pillar.Colors, pillar.Width*pillar.Height * sizeof(u16), colors, pillar.Width*pillar.Height * sizeof(u16));
+			memcpy_s(pillar.Pixels, pillar.Width*pillar.Height * sizeof(wchar_t), pixels, pillar.Width*pillar.Height * sizeof(wchar_t));
+
+			if(pillarData.Data)
+				free(pillarData.Data);
+		}
+	}
+	
+	pillarX = 27.5f;
+	pillarY = 5.5f;
+	
 	for (int y = 0; y < mapH; ++y)
 	{
 		for (int x = 0; x < mapW; ++x)
@@ -68,6 +77,8 @@ void DemoGame::LoadContent()
 	}
 }
 
+float playerHeight = 0.0f;
+
 bool DemoGame::Update(float deltaTime)
 {
 	bool Quit = false;
@@ -75,6 +86,15 @@ bool DemoGame::Update(float deltaTime)
 		Quit = true;
 
 	float playerSpeed = 10.0f;
+
+	if (GetAsyncKeyState((u16)VK_UP) & 0x8000)
+	{
+		playerHeight += playerSpeed * deltaTime;
+	}
+	else if(GetAsyncKeyState((u16)VK_DOWN) & 0x8000)
+	{
+		playerHeight -= playerSpeed * deltaTime;
+	}
 
 	// Forward / Backward Movement
 	if (GetAsyncKeyState((unsigned short)L'W') & 0x8000)
@@ -133,7 +153,7 @@ bool DemoGame::Update(float deltaTime)
 			playerY += sinf(playerAngle) * playerSpeed * deltaTime;
 		}
 	}
-
+	
 	// Clear buffer to certain color
 	//ClearBuffer(PIXEL_COLOR_GREY);
 
@@ -209,8 +229,8 @@ bool DemoGame::Update(float deltaTime)
 		}
 
 		// Calculate the distance to the ceiling
-		int DistanceToCeiling = ((float)screenHeight / 2) - (float)screenHeight / DistanceToWall;
-		int DistanceToFloor = screenHeight - DistanceToCeiling;
+		int DistanceToCeiling = (((float)screenHeight / 2) - ((float)screenHeight / DistanceToWall));
+		int DistanceToFloor = (screenHeight - DistanceToCeiling);
 
 		renderer.GetRenderBuffers()->DepthBuffer[x] = DistanceToWall;
 
@@ -286,8 +306,8 @@ bool DemoGame::Update(float deltaTime)
 
 	// drawing Objects
 	// We want to calculate the distance between the object and the player
-	float directionToObjX = SpriteX - playerX;
-	float directionToObjY = SpriteY - playerY;
+	float directionToObjX = pillarX - playerX;
+	float directionToObjY = pillarY - playerY;
 	float distanceToPlayer = sqrtf(directionToObjX*directionToObjX + directionToObjY*directionToObjY);
 
 	// Then we want to create our forward vector
@@ -313,7 +333,7 @@ bool DemoGame::Update(float deltaTime)
 		float ObjectCeiling = (float)(screenHeight / 2.0f) - screenHeight / distanceToPlayer;
 		float ObjectFloor = screenHeight - ObjectCeiling;
 		float ObjectHeight = ObjectFloor - ObjectCeiling;
-		float ObjectAspectRatio = (float)SpriteH / (float)SpriteW;
+		float ObjectAspectRatio = (float)pillar.Height / (float)pillar.Width;
 		float ObjectWidth = ObjectHeight / ObjectAspectRatio;
 		float ObjectCenter = (0.5f * (objectAngle / (FOV / 2.0f)) + 0.5f) * (float)screenWidth;
 
@@ -323,15 +343,15 @@ bool DemoGame::Update(float deltaTime)
 			{
 				float SampleX = x / ObjectWidth;
 				float SampleY = y / ObjectHeight;
-				int Row = SampleY * SpriteH;
-				int Col = SampleX * SpriteW;
-				wchar_t glyph = Sprite[Row * SpriteW + Col];
-
+				int Row = SampleY * pillar.Height;
+				int Col = SampleX * pillar.Width;
+				wchar_t glyph = pillar.Pixels[Row * pillar.Width + Col];
+				u16 color = pillar.Colors[Row * pillar.Width + Col];
 				int ObjectCol = (int)(ObjectCenter + x - (ObjectWidth / 2.0f));
 				if (ObjectCol >= 0 && ObjectCol < screenWidth)
 				{
-					if (glyph == '#' && renderer.GetRenderBuffers()->DepthBuffer[ObjectCol] >= distanceToPlayer)
-						renderer.DrawPixel(ObjectCol, ObjectCeiling + y, PIXEL_SOLID, PIXEL_COLOR_DARK_RED);
+					if (glyph != ' ' && renderer.GetRenderBuffers()->DepthBuffer[ObjectCol] >= distanceToPlayer)
+						renderer.DrawPixel(ObjectCol, ObjectCeiling + y, glyph, color);
 				}
 			}
 		}
@@ -370,7 +390,7 @@ bool DemoGame::Update(float deltaTime)
 	// Draw player
 	renderer.DrawPixel((int)(playerX + Screen1X), (int)(playerY + Screen1Y), PIXEL_SOLID, PIXEL_COLOR_LIGHT_GREEN);
 
-	renderer.DrawPixel((int)(SpriteX + Screen1X), (int)(SpriteY + Screen1Y), PIXEL_SEMI_DARK, PIXEL_COLOR_LIGHT_RED);
+	renderer.DrawPixel((int)(pillarX + Screen1X), (int)(pillarY + Screen1Y), PIXEL_SEMI_DARK, PIXEL_COLOR_LIGHT_RED);
 
 	// Present buffers to the screen
 	renderer.PresentBuffer();

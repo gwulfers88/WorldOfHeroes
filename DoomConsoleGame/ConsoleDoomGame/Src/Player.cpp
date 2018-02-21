@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 /**********************************************************
 File Name: Player.cpp
 Start Date: 01/23/2018
@@ -10,6 +11,8 @@ Description:
 ===========================================================
 **********************************************************/
 
+=======
+>>>>>>> a466b0535179018ec01b36400d5cbc574e86b7ae
 #include "Player.h"
 
 Player::Player(i8* name)
@@ -73,6 +76,7 @@ i32 Player::getHealth() const {
 Weapons Player::getCurWeapons() const {
 	return _weapons[_curWeaponsIndex];
 }
+
 
 
 

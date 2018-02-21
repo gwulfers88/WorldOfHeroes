@@ -2,6 +2,7 @@
 #define DEMO_GAME_H
 
 #include "BaseGame.h"
+#include "Sprite.h"
 
 class DemoGame : public BaseGame
 {
@@ -24,11 +25,10 @@ protected:
 	float FOV;
 	float depth;
 
-	float SpriteX;
-	float SpriteY;
-	int SpriteW;
-	int SpriteH;
-	wchar_t *Sprite;
+	float pillarX;
+	float pillarY;
+
+	Sprite pillar;
 };
 
 #endif

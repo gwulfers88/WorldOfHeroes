@@ -107,6 +107,56 @@ void ConsoleApp::Run(BaseGame* game)
 		while (!Quit)
 		{
 			u64 UpdateCounter = win32_GetClockTime();
+			// Handle Mouse Input - Check for window events
+			INPUT_RECORD inBuf[32];
+			DWORD events = 0;
+			GetNumberOfConsoleInputEvents(consoleHandle, &events);
+			if (events > 0)
+				ReadConsoleInput(consoleHandle, inBuf, events, &events);
+
+			// Handle events - we only care about mouse clicks and movement
+			// for now
+			for (DWORD i = 0; i < events; i++)
+			{
+				switch (inBuf[i].EventType)
+				{
+				case FOCUS_EVENT:
+				{
+					//m_bConsoleInFocus = inBuf[i].Event.FocusEvent.bSetFocus;
+				}
+				break;
+
+				case MOUSE_EVENT:
+				{
+					switch (inBuf[i].Event.MouseEvent.dwEventFlags)
+					{
+					case MOUSE_MOVED:
+					{
+						//m_mousePosX = inBuf[i].Event.MouseEvent.dwMousePosition.X;
+						//m_mousePosY = inBuf[i].Event.MouseEvent.dwMousePosition.Y;
+					}
+					break;
+
+					case 0:
+					{
+						//for (int m = 0; m < 5; m++)
+							//m_mouseNewState[m] = (inBuf[i].Event.MouseEvent.dwButtonState & (1 << m)) > 0;
+
+					}
+					break;
+
+					default:
+						break;
+					}
+				}
+				break;
+
+				default:
+					break;
+					// We don't care just at the moment
+				}
+			}
+
 			Quit = game->Update(deltaTime);
 			r32 UpdateSecondsElapsed = (r32)win32_GetSecondsElapsed(StartCounter, UpdateCounter) * 1000.0f;
 
