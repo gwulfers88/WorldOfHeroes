@@ -1,5 +1,19 @@
-#pragma once
+/**********************************************************
+File Name: Player.h
+Start Date: 01/23/2018
+Mod Date: 02/20/2018
+Creator Name: Davin Ross
+Contributors Name: Davin Ross
+===========================================================
+Description: 
+	This file is the header file for the Player Class
+===========================================================
+**********************************************************/
+#ifndef PLAYER_H
+#define PLAYER_H
+
 #include "platform.h"
+#include "Weapons.h"
 
 // Weapons Index
 enum WEAPONS {
@@ -14,28 +28,22 @@ public:
 	~Player(void);
 
 	// Setters
-	void setAmmo(i32);
 	void setHealth(i32);
 	void setArmor(i32);
 	void setCurWeapons(WEAPONS newWeaponsIndex);
-
+	
 	// Getters
-	i32 getAmmo() const;
 	i32 getHealth() const;
 	i32 getArmor() const;
-	i32 getMaxAmmo() const;
 	i8* getName() const;
-	i8* getCurWeapons() const;
-
+	Weapons getCurWeapons() const;
+	
 private:
-
-	// Current Ammo, Health and Armor 
-	i32 _ammo[2];
+	// Current Health and Armor 	
 	i32 _health;
 	i32 _armor;
 
-	// Max Ammo, Health and Armor
-	i32 _maxAmmo[2];
+	// Max Health and Armor
 	i32 _maxHealth;
 	i32 _maxArmor;
 
@@ -45,5 +53,6 @@ private:
 	// Weapons Slots
 	WEAPONS _curWeaponsIndex; // Curent Index
 	i32 _maxWeapons; // Max Number of Weapons
-	i8* _weapons[2]; // Weapons Array
+	Weapons _weapons[2]; // Weapons Array
 };
+#endif
