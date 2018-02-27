@@ -224,13 +224,13 @@ bool SpriteEditor::Update(float deltaTime)
 	{
 		if ((int)colorID == i)
 		{
-			renderer.DrawPixel(ColorsX + (i * 2) + 1, ColorsY, PIXEL_SOLID, PIXEL_COLOR_DARK_CYAN);
-			renderer.DrawPixel(ColorsX + (i * 2) - 1, ColorsY, PIXEL_SOLID, PIXEL_COLOR_DARK_CYAN);
-			renderer.DrawPixel(ColorsX + (i * 2), ColorsY + 1, PIXEL_SOLID, PIXEL_COLOR_DARK_CYAN);
-			renderer.DrawPixel(ColorsX + (i * 2), ColorsY - 1, PIXEL_SOLID, PIXEL_COLOR_DARK_CYAN);
+			renderer.DrawPixel({ (r32)ColorsX + (i * 2) + 1, (r32)ColorsY }, PIXEL_SOLID, PIXEL_COLOR_DARK_CYAN);
+			renderer.DrawPixel({ (r32)ColorsX + (i * 2) - 1, (r32)ColorsY }, PIXEL_SOLID, PIXEL_COLOR_DARK_CYAN);
+			renderer.DrawPixel({ (r32)ColorsX + (i * 2), (r32)ColorsY + 1 }, PIXEL_SOLID, PIXEL_COLOR_DARK_CYAN);
+			renderer.DrawPixel({ (r32)ColorsX + (i * 2), (r32)ColorsY - 1 }, PIXEL_SOLID, PIXEL_COLOR_DARK_CYAN);
 		}
 
-		renderer.DrawPixel(ColorsX + (i * 2), ColorsY, PIXEL_SOLID, *(colors + i));
+		renderer.DrawPixel({ (r32)ColorsX + (i * 2), (r32)ColorsY }, PIXEL_SOLID, *(colors + i));
 	}
 
 	// Draw Canvas
@@ -240,25 +240,25 @@ bool SpriteEditor::Update(float deltaTime)
 		{
 			// Top and Bottom Lines
 			if (y == 0)
-				renderer.DrawPixel(x + (CanvasX - 1), y + (CanvasY - 1), PIXEL_SOLID, PIXEL_COLOR_WHITE);
+				renderer.DrawPixel({ (r32)x + (CanvasX - 1), (r32)y + (CanvasY - 1) }, PIXEL_SOLID, PIXEL_COLOR_WHITE);
 			if (y == sprite.Height)
-				renderer.DrawPixel(x + (CanvasX), y + (CanvasY), PIXEL_SOLID, PIXEL_COLOR_WHITE);
+				renderer.DrawPixel({ (r32)x + (CanvasX), (r32)y + (CanvasY) }, PIXEL_SOLID, PIXEL_COLOR_WHITE);
 
 			if (x == 0)
-				renderer.DrawPixel(x + (CanvasX - 1), y + (CanvasY - 1), PIXEL_SOLID, PIXEL_COLOR_WHITE);
+				renderer.DrawPixel({ (r32)x + (CanvasX - 1), (r32)y + (CanvasY - 1) }, PIXEL_SOLID, PIXEL_COLOR_WHITE);
 			if (x == sprite.Width)
-				renderer.DrawPixel(x + (CanvasX), y + (CanvasY), PIXEL_SOLID, PIXEL_COLOR_WHITE);
+				renderer.DrawPixel({ (r32)x + (CanvasX), (r32)y + (CanvasY) }, PIXEL_SOLID, PIXEL_COLOR_WHITE);
 		}
 	}
 
-	renderer.DrawSprite(CanvasX, CanvasY, sprite.Width, sprite.Height, sprite.Pixels, sprite.Colors);
+	renderer.DrawSprite({ (r32)CanvasX, (r32)CanvasY }, { (r32)sprite.Width, (r32)sprite.Height }, sprite.Pixels, sprite.Colors);
 
 	// Draw Cursor
 	for (int y = 0; y < CursorRadius; ++y)
 	{
 		for (int x = 0; x < CursorRadius; ++x)
 		{
-			renderer.DrawPixel(CanvasX + (int)CursorX + (int)(x), CanvasY + (int)CursorY + (int)(y), PIXEL_SEMI_DARK, PIXEL_COLOR_LIGHT_CYAN);
+			renderer.DrawPixel({ (r32)CanvasX + (int)CursorX + (int)(x), (r32)CanvasY + (int)CursorY + (int)(y) }, PIXEL_SEMI_DARK, PIXEL_COLOR_LIGHT_CYAN);
 		}
 	}
 

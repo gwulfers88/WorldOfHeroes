@@ -5,7 +5,6 @@
 #include <stdio.h>
 #include <vector>
 #include <algorithm>
-#include <math.h>
 #include <Windows.h>
 
 // Types used

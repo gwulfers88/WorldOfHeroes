@@ -20,7 +20,7 @@ public:
 	Weapons();
 	~Weapons();
 
-	i32 addAmmo(i32);
+	// i32 addAmmo(i32); // Commented this because the definition was commented.
 
 	// Setters
 	void setAmmo(i32);

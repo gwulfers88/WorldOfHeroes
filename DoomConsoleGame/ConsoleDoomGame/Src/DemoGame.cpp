@@ -4,8 +4,8 @@
 
 void DemoGame::LoadContent()
 {
-	playerX = 1;
-	playerY = 1;
+	playerP.x = 1;
+	playerP.y = 1;
 	playerAngle = 0;
 	FOV = PI / 4.0f;
 	depth = 40.0f;
@@ -16,28 +16,28 @@ void DemoGame::LoadContent()
 	map =
 	{
 		L"########################################"
-		L"#..........D...........................#"
-		L"#..........#######.....................#"
-		L"#..........#.....#.....................#"
-		L"#......S...#.....#.....................#"
-		L"############.....#.....................#"
-		L".................#.....................#"
-		L".................#.....................#"
-		L".................#.....................#"
-		L".................D.....................#"
-		L".................D.....................#"
-		L".................#.....................#"
-		L".................#.....................#"
-		L".................#.....................#"
-		L".................#.....................#"
-		L".................#.....................#"
-		L".................#.....................#"
+		L"#..........D.....D.....................#"
+		L"#..........#######...#######D#######...#"
+		L"#..........#.....#...#.............#...#"
+		L"#......S...#.....#...######...######...#"
+		L"############.....#...#.............#...#"
+		L".................#...#.............#...#"
+		L".................#...############..#...#"
+		L".................#...#.............#...#"
+		L".................D...#.............#...#"
+		L".................D...#..############...#"
+		L".................#...#.............#...#"
+		L".................#...#.............#...#"
+		L".................#...############..#...#"
+		L".................#...#.............#...#"
+		L".................#...#.............#...#"
+		L".................#...####D##########...#"
 		L".................#.....................#"
 		L".................#.....................#"
 		L".................#######################"
 	};
 
-	// Load the pillar
+	// Load the pillar texture
 	int pillarHandle = platform_fileOpen("data/pillar_01.sprt", "rb");
 	FileReadData pillarData = platform_fileReadEntire(pillarHandle);
 	platform_fileClose(pillarHandle);
@@ -61,17 +61,41 @@ void DemoGame::LoadContent()
 		}
 	}
 	
-	pillarX = 27.5f;
-	pillarY = 5.5f;
+	pillarP.x = 27.5f;
+	pillarP.y = 5.5f;
 	
+	// Load the wall texture
+	int wallHandle = platform_fileOpen("data/wall_01.sprt", "rb");
+	FileReadData wallData = platform_fileReadEntire(wallHandle);
+	platform_fileClose(wallHandle);
+	SpriteHeader* wallHeader = (SpriteHeader*)wallData.Data;
+	if (wallHeader)
+	{
+		if (wallHeader->Sentinal[0] == 'S' && wallHeader->Sentinal[1] == 'P' && wallHeader->Sentinal[2] == 'R' && wallHeader->Sentinal[3] == 'T')
+		{
+			wall.Width = wallHeader->Width;
+			wall.Height = wallHeader->Height;
+			u16* colors = (u16*)((u8*)wallData.Data + wallHeader->ColorOffset);
+			wchar_t* pixels = (wchar_t*)((u8*)wallData.Data + wallHeader->PixelOffset);
+			wall.Colors = CreateArray(Memory::GetPersistantHandle(), u16, wall.Width * wall.Height);
+			wall.Pixels = CreateArray(Memory::GetPersistantHandle(), wchar_t, wall.Width * wall.Height);
+
+			memcpy_s(wall.Colors, wall.Width*wall.Height * sizeof(u16), colors, wall.Width*wall.Height * sizeof(u16));
+			memcpy_s(wall.Pixels, wall.Width*wall.Height * sizeof(wchar_t), pixels, wall.Width*wall.Height * sizeof(wchar_t));
+
+			if (wallData.Data)
+				free(wallData.Data);
+		}
+	}
+
 	for (int y = 0; y < mapH; ++y)
 	{
 		for (int x = 0; x < mapW; ++x)
 		{
 			if (map[y * mapW + x] == 'S')
 			{
-				playerX = x;
-				playerY = y;
+				playerP.x = x;
+				playerP.y = y;
 			}
 		}
 	}
@@ -90,24 +114,24 @@ bool DemoGame::Update(float deltaTime)
 		// Forward / Backward Movement
 		if (Controller->MoveUp.pressed)
 		{
-			playerX += sinf(playerAngle) * playerSpeed * deltaTime;
-			playerY += cosf(playerAngle) * playerSpeed * deltaTime;
+			playerP.x += sinf(playerAngle) * playerSpeed * deltaTime;
+			playerP.y += cosf(playerAngle) * playerSpeed * deltaTime;
 
-			if (map[(int)playerY * mapW + (int)playerX] == L'#')
+			if (map[(int)playerP.y * mapW + (int)playerP.x] == L'#')
 			{
-				playerX -= sinf(playerAngle) * playerSpeed * deltaTime;
-				playerY -= cosf(playerAngle) * playerSpeed * deltaTime;
+				playerP.x -= sinf(playerAngle) * playerSpeed * deltaTime;
+				playerP.y -= cosf(playerAngle) * playerSpeed * deltaTime;
 			}
 		}
 		else if (Controller->MoveDown.pressed)
 		{
-			playerX -= sinf(playerAngle) * playerSpeed * deltaTime;
-			playerY -= cosf(playerAngle) * playerSpeed * deltaTime;
+			playerP.x -= sinf(playerAngle) * playerSpeed * deltaTime;
+			playerP.y -= cosf(playerAngle) * playerSpeed * deltaTime;
 
-			if (map[(int)playerY * mapW + (int)playerX] == L'#')
+			if (map[(int)playerP.y * mapW + (int)playerP.x] == L'#')
 			{
-				playerX += sinf(playerAngle) * playerSpeed * deltaTime;
-				playerY += cosf(playerAngle) * playerSpeed * deltaTime;
+				playerP.x += sinf(playerAngle) * playerSpeed * deltaTime;
+				playerP.y += cosf(playerAngle) * playerSpeed * deltaTime;
 			}
 		}
 
@@ -124,24 +148,24 @@ bool DemoGame::Update(float deltaTime)
 		// Straffe Movement
 		if (Controller->ActionLeft.pressed)
 		{
-			playerX -= cosf(playerAngle) * playerSpeed * deltaTime;
-			playerY += sinf(playerAngle) * playerSpeed * deltaTime;
+			playerP.x -= cosf(playerAngle) * playerSpeed * deltaTime;
+			playerP.y += sinf(playerAngle) * playerSpeed * deltaTime;
 
-			if (map[(int)playerY * mapW + (int)playerX] == L'#')
+			if (map[(int)playerP.y * mapW + (int)playerP.x] == L'#')
 			{
-				playerX += cosf(playerAngle) * playerSpeed * deltaTime;
-				playerY -= sinf(playerAngle) * playerSpeed * deltaTime;
+				playerP.x += cosf(playerAngle) * playerSpeed * deltaTime;
+				playerP.y -= sinf(playerAngle) * playerSpeed * deltaTime;
 			}
 		}
 		else if (Controller->ActionRight.pressed)
 		{
-			playerX += cosf(playerAngle) * playerSpeed * deltaTime;
-			playerY -= sinf(playerAngle) * playerSpeed * deltaTime;
+			playerP.x += cosf(playerAngle) * playerSpeed * deltaTime;
+			playerP.y -= sinf(playerAngle) * playerSpeed * deltaTime;
 
-			if (map[(int)playerY * mapW + (int)playerX] == L'#')
+			if (map[(int)playerP.y * mapW + (int)playerP.x] == L'#')
 			{
-				playerX -= cosf(playerAngle) * playerSpeed * deltaTime;
-				playerY += sinf(playerAngle) * playerSpeed * deltaTime;
+				playerP.x -= cosf(playerAngle) * playerSpeed * deltaTime;
+				playerP.y += sinf(playerAngle) * playerSpeed * deltaTime;
 			}
 		}
 	}
@@ -162,22 +186,25 @@ bool DemoGame::Update(float deltaTime)
 		float DistanceToWall = 0.0f;	// 
 
 		bool HitWall = false;
-		bool Boundary = false;
+		bool HitDoor = false;
 
-		float EyeX = sinf(RayAngle);
-		float EyeY = cosf(RayAngle);
+		vec2 eye = {};
+		eye.x = sinf(RayAngle);
+		eye.y = cosf(RayAngle);
+
+		r32 sampleX = 0;
 
 		short Color = PIXEL_COLOR_WHITE;
 
-		while (!HitWall && DistanceToWall < depth)
+		while (!HitWall && !HitDoor && DistanceToWall < depth)
 		{
 			DistanceToWall += StepSize;
 
-			i32 TestX = (playerX + EyeX * DistanceToWall);
-			i32 TestY = (playerY + EyeY * DistanceToWall);
+			i32 TestX = (playerP.x + eye.x * DistanceToWall);
+			i32 TestY = (playerP.y + eye.y * DistanceToWall);
 
-			r32 DX = (playerX + EyeX * DistanceToWall);
-			r32 DY = (playerY + EyeY * DistanceToWall);
+			r32 DX = (playerP.x + eye.x * DistanceToWall);
+			r32 DY = (playerP.y + eye.y * DistanceToWall);
 
 			// Our ray has gone Out of bounds
 			if (TestX < 0 || TestX >= mapW || TestY < 0 || TestY >= mapH)
@@ -196,34 +223,18 @@ bool DemoGame::Update(float deltaTime)
 					// Calculate the Texture coordinates here.
 					Color = PIXEL_COLOR_DARK_CYAN;
 
-					// Calculate Boundaries of walls
-					// To highlight tile boundaries, cast a ray from each corner
-					// of the tile, to the player. The more coincident this ray
-					// is to the rendering ray, the closer we are to a tile 
-					// boundary, which we'll shade to add detail to the walls
-					std::vector<std::pair<float, float>> p;
+					vec2 wallMidP = Vec2((r32)TestX + 0.5f, (r32)TestY + 0.5f);
+					vec2 testP = playerP + eye * DistanceToWall;
+					float testAngle = atan2f(testP.y - wallMidP.y, testP.x - wallMidP.x);
 
-					// Test each corner of hit tile, storing the distance from
-					// the player, and the calculated dot product of the two rays
-					for (int tx = 0; tx < 2; tx++)
-						for (int ty = 0; ty < 2; ty++)
-						{
-							// Angle of corner to eye
-							float vy = (float)TestY + ty - playerY;
-							float vx = (float)TestX + tx - playerX;
-							float d = sqrt(vx*vx + vy*vy);
-							float dot = (EyeX * vx / d) + (EyeY * vy / d);
-							p.push_back(std::make_pair(d, dot));
-						}
-
-					// Sort Pairs from closest to farthest
-					sort(p.begin(), p.end(), [](const std::pair<float, float> &left, const std::pair<float, float> &right) {return left.first < right.first; });
-
-					// First two/three are closest (we will never see all four)
-					float Bound = 0.01;
-					if (acos(p.at(0).second) < Bound) Boundary = true;
-					if (acos(p.at(1).second) < Bound) Boundary = true;
-					//if (acos(p.at(2).second) < Bound) Boundary = true;
+					if (testAngle >= -PI * 0.25f && testAngle < PI * 0.25f)
+						sampleX = testP.y - TestY;
+					if (testAngle >= PI * 0.25f && testAngle < PI * 0.75f)
+						sampleX = testP.x - TestX;
+					if (testAngle < -PI * 0.25f && testAngle >= -PI * 0.75f)
+						sampleX = testP.x - TestX;
+					if (testAngle >= PI * 0.75f || testAngle < -PI * 0.75f)
+						sampleX = testP.y - TestY;
 				}
 				// Ray is still in bounds to test cell for Doors
 				else if (map[(i32)TestY * mapW + (i32)TestX] == L'D')
@@ -236,7 +247,7 @@ bool DemoGame::Update(float deltaTime)
 						Color = PIXEL_COLOR_DARK_MAGENTA;
 
 						// Ray has hit a wall
-						HitWall = true;
+						HitDoor = true;
 					}
 				}
 			}
@@ -251,42 +262,50 @@ bool DemoGame::Update(float deltaTime)
 		// Shade walls based on distance 
 		wchar_t shade = PIXEL_SOLID;
 		
-		if (DistanceToWall <= depth / 4)
+		if (DistanceToWall <= depth / 16)
 		{
 			shade = PIXEL_SOLID;
-			//Color = PIXEL_COLOR_WHITE;
 		}
-		else if (DistanceToWall < depth / 3)
+		else if (DistanceToWall < depth / 8)
 		{
 			shade = PIXEL_SEMI_DARK;
-			//Color = PIXEL_COLOR_WHITE;
+		}
+		else if (DistanceToWall < depth / 4)
+		{
+			shade = PIXEL_MEDIUM_DARK;
 		}
 		else if (DistanceToWall < depth / 2)
 		{
-			shade = PIXEL_MEDIUM_DARK;
-			//Color = PIXEL_COLOR_GREY;
+			shade = PIXEL_DARK;
 		}
 		else
-		{
-			shade = PIXEL_DARK;
-			//Color = PIXEL_COLOR_BLACK;
-		}
-
-		if (Boundary)
-		{
-			shade = PIXEL_DARK;
-			Color = PIXEL_COLOR_BLACK;
-		}
+			shade = ' ';
 
 		for (int y = 0; y < screenHeight; ++y)
 		{
 			if (y <= DistanceToCeiling)
 			{
-				renderer.DrawPixel(x, y, PIXEL_SOLID, PIXEL_COLOR_BLACK);
+				renderer.DrawPixel({(r32)x, (r32)y}, PIXEL_SOLID, PIXEL_COLOR_BLACK);
 			}
-			else if (y > DistanceToCeiling && y <= DistanceToFloor)
+			else if (y > DistanceToCeiling && y <= DistanceToFloor)	// Wall
 			{
-				renderer.DrawPixel(x, y, shade, Color);
+				if (HitWall)
+				{
+					r32 sampleY = ((r32)y - DistanceToCeiling) / (DistanceToFloor - DistanceToCeiling);
+
+					i32 sampleIndexX = sampleX * wall.Width;
+					i32 sampleIndexY = sampleY * wall.Height;
+
+					sampleIndexX = Clamp(0, sampleIndexX, wall.Width - 1);
+					sampleIndexY = Clamp(0, sampleIndexY, wall.Height - 1);
+
+					Color = wall.Colors[sampleIndexY * wall.Width + sampleIndexX];
+				}
+				if (HitDoor)
+				{
+
+				}
+				renderer.DrawPixel({ (r32)x, (r32)y }, shade, Color);
 			}
 			else
 			{
@@ -312,22 +331,23 @@ bool DemoGame::Update(float deltaTime)
 					shade = PIXEL_DARK;
 					Color = PIXEL_COLOR_DARK_GREEN;
 				}
-				renderer.DrawPixel(x, y, shade, Color);
+				renderer.DrawPixel({(r32)x, (r32)y}, shade, Color);
 			}
 		}
 	}
 
 	// drawing Objects
 	// We want to calculate the distance between the object and the player
-	float directionToObjX = pillarX - playerX;
-	float directionToObjY = pillarY - playerY;
+	float directionToObjX = pillarP.x - playerP.x;
+	float directionToObjY = pillarP.y - playerP.y;
 	float distanceToPlayer = sqrtf(directionToObjX*directionToObjX + directionToObjY*directionToObjY);
 
 	// Then we want to create our forward vector
 	// Calculate the objects angle between the forward vector and direction that the object is in.
-	float EyeX = sinf(playerAngle);
-	float EyeY = cosf(playerAngle);
-	float objectAngle = atan2f(EyeY, EyeX) - atan2f(directionToObjY, directionToObjX);
+	vec2 eye = {};
+	eye.x = sinf(playerAngle);
+	eye.y = cosf(playerAngle);
+	float objectAngle = atan2f(eye.y, eye.x) - atan2f(directionToObjY, directionToObjX);
 	if (objectAngle < -PI)
 		objectAngle += 2.0f * PI;
 	if (objectAngle > PI)
@@ -364,27 +384,27 @@ bool DemoGame::Update(float deltaTime)
 				if (ObjectCol >= 0 && ObjectCol < screenWidth)
 				{
 					if (glyph != ' ' && renderer.GetRenderBuffers()->DepthBuffer[ObjectCol] >= distanceToPlayer)
-						renderer.DrawPixel(ObjectCol, ObjectCeiling + y, glyph, color);
+						renderer.DrawPixel({(r32)ObjectCol, (r32)ObjectCeiling + y}, glyph, color);
 				}
 			}
 		}
 	}
 
 	// 2D Map
-	int Screen1X = 10;
-	int Screen1Y = 10;
-
+	vec2 screenOnePos = Vec2(10, 10);
+	
 	// Draw Map
 	for (int y = 0; y < mapH; ++y)
 	{
 		for (int x = 0; x < mapW; ++x)
 		{
+			vec2 p = Vec2(x, y);
 			if (map[y * mapW + x] == '#')
 			{
-				renderer.DrawPixel(Screen1X + x, Screen1Y + y, PIXEL_SOLID, PIXEL_COLOR_DARK_RED); // Walls
+				renderer.DrawPixel(screenOnePos + p, PIXEL_SOLID, PIXEL_COLOR_DARK_RED); // Walls
 			}
 			else
-				renderer.DrawPixel(Screen1X + x, Screen1Y + y, PIXEL_SOLID, PIXEL_COLOR_GREY); // Floor
+				renderer.DrawPixel(screenOnePos + p, PIXEL_SOLID, PIXEL_COLOR_GREY); // Floor
 		}
 	}
 
@@ -392,18 +412,19 @@ bool DemoGame::Update(float deltaTime)
 	for (int x = 0; x < mapW; ++x)
 	{
 		float ViewAngle = (playerAngle - FOV / 2) + ((float)x / mapW) * FOV;
-		float EyeX = sinf(ViewAngle);
-		float EyeY = cosf(ViewAngle);
+		eye.x = sinf(ViewAngle);
+		eye.y = cosf(ViewAngle);
 
 		for (int y = 0; y < mapH; ++y)
 		{
-			renderer.DrawPixel((int)(playerX + Screen1X + EyeX * y), (int)(playerY + Screen1Y + EyeY * y), PIXEL_SOLID, PIXEL_COLOR_LIGHT_BLUE);
+			renderer.DrawPixel(playerP + screenOnePos + eye * y, PIXEL_SOLID, PIXEL_COLOR_LIGHT_BLUE);
 		}
 	}
 	// Draw player
-	renderer.DrawPixel((int)(playerX + Screen1X), (int)(playerY + Screen1Y), PIXEL_SOLID, PIXEL_COLOR_LIGHT_GREEN);
+	renderer.DrawPixel(playerP + screenOnePos, PIXEL_SOLID, PIXEL_COLOR_LIGHT_GREEN);
 
-	renderer.DrawPixel((int)(pillarX + Screen1X), (int)(pillarY + Screen1Y), PIXEL_SEMI_DARK, PIXEL_COLOR_LIGHT_RED);
+	// Draw Pillar
+	renderer.DrawPixel(pillarP + screenOnePos, PIXEL_SEMI_DARK, PIXEL_COLOR_LIGHT_RED);
 
 	// Present buffers to the screen
 	renderer.PresentBuffer();

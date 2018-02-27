@@ -39,5 +39,11 @@
     <ClInclude Include="Src\File.h">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="Src\vec2.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\vec3.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

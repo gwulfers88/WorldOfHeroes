@@ -13,7 +13,6 @@ This is the entry point to our progrqam.
 
 #include "ConsoleApp.h"
 #include "DemoGame.h"
-#include "Player.h"
 
 // Inventory Vars
 int ammo = 0;
