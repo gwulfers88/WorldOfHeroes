@@ -5,7 +5,6 @@
 #include <stdio.h>
 #include <vector>
 #include <algorithm>
-#include <math.h>
 #include <Windows.h>
 
 // Types used
@@ -61,5 +60,31 @@ internal_ r64 win32_GetSecondsElapsed(u64 Start, u64 End)
 	r64 Result = ((r64)(End - Start) / (r64)GlobalPerforceFreq);
 	return Result;
 }
+
+struct game_button
+{
+	bool pressed;
+};
+
+union game_controller
+{
+	struct 
+	{
+		game_button MoveUp;
+		game_button MoveDown; 
+		game_button MoveLeft;
+		game_button MoveRight;
+		
+		game_button ActionUp;
+		game_button ActionDown;
+		game_button ActionLeft;
+		game_button ActionRight;
+
+		game_button Start;
+		game_button Back;
+	};
+
+	game_button Buttons[10];
+};
 
 #endif

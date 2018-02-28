@@ -16,41 +16,52 @@ void ConsoleRenderer::SetScreenBuffer(ScreenBuffer *_screen)
 }
 
 // Draws a single pixel onto the screen buffer using the desired x, y position, type of pixel and color.
-void ConsoleRenderer::DrawPixel(i32 x, i32 y, wchar_t pixel, u16 color)
+void ConsoleRenderer::DrawPixel(vec2 pos, wchar_t pixel, u16 color)
 {
-	if (x < 0)
+	if (pos.x < 0)
 	{
-		x = 0;
+		pos.x = 0;
 	}
-	if (x >= screen->Width)
+	if (pos.x >= screen->Width)
 	{
-		x = screen->Width - 1;
+		pos.x = screen->Width - 1;
 	}
-	if (y < 0)
+	if (pos.y < 0)
 	{
-		y = 0;
+		pos.y = 0;
 	}
-	if (y >= screen->Height)
+	if (pos.y >= screen->Height)
 	{
-		y = screen->Height - 1;
+		pos.y = screen->Height - 1;
 	}
 
-	screen->Buffer[y * screen->Width + x] = pixel;
-	screen->Attribs[y * screen->Width + x] = color;
+	screen->Buffer[(int)pos.y * screen->Width + (int)pos.x] = pixel;
+	screen->Attribs[(int)pos.y * screen->Width + (int)pos.x] = color;
+}
+
+void ConsoleRenderer::DrawRect(vec2 pos, vec2 dims, wchar_t pixel, u16 color)
+{
+	for (u32 row = pos.y; row < dims.y; row++)
+	{
+		for (u32 col = pos.x; col < dims.x; col++)
+		{
+			DrawPixel({(r32)col, (r32)row}, pixel, color);
+		}
+	}
 }
 
 // Draws a sprite onto the screen buffer using desired x, y pos and color.
-void ConsoleRenderer::DrawSprite(i32 posX, i32 posY, i32 spriteW, i32 spriteH, wchar_t* spriteData, u16 *colorData)
+void ConsoleRenderer::DrawSprite(vec2 pos, vec2 dims, wchar_t* spriteData, u16 *colorData)
 {
-	for (i32 col = 0; col < spriteH; ++col)
+	for (i32 col = 0; col < dims.y; ++col)
 	{
-		for (i32 row = 0; row < spriteW; ++row)
+		for (i32 row = 0; row < dims.x; ++row)
 		{
-			i32 pixelX = posX + row;
-			i32 pixelY = posY + col;
-			wchar_t glyph = spriteData[col * spriteW + row];
-			u16 color = colorData[col * spriteW + row];
-			DrawPixel(pixelX, pixelY, glyph, color);
+			i32 pixelX = pos.x + row;
+			i32 pixelY = pos.y + col;
+			wchar_t glyph = spriteData[col * (int)dims.x + row];
+			u16 color = colorData[col * (int)dims.x + row];
+			DrawPixel({(r32)pixelX, (r32)pixelY}, glyph, color);
 		}
 	}
 }
@@ -62,7 +73,7 @@ void ConsoleRenderer::ClearBuffer(u16 color)
 	{
 		for (i32 x = 0; x < screen->Width; ++x)
 		{
-			DrawPixel(x, y, PIXEL_SOLID, color);
+			DrawPixel({(r32)x, (r32)y}, PIXEL_SOLID, color);
 		}
 	}
 }
