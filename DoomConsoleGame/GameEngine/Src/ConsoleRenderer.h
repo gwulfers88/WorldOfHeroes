@@ -13,6 +13,7 @@ render the current game
 #define CRenderer_H
 
 #include "platform.h"
+#include "Sprite.h"
 #include "vec2.h"
 
 #pragma pack(push, 16)
@@ -65,6 +66,8 @@ public:
 	void DrawRect(vec2 pos, vec2 dims, wchar_t pixel = PIXEL_SOLID, u16 color = PIXEL_COLOR_WHITE);
 	// Draws a sprite onto the screen buffer using desired x, y pos and color.
 	void DrawSprite(vec2 pos, vec2 dims, wchar_t* spriteData, u16 *colorData);
+	// Draws a sprite with the specified dimensions
+	void DrawUI(vec2 pos, vec2 dims, Sprite* img);
 	// Clears the entire screen buffer to the desired color.
 	void ClearBuffer(u16 color = PIXEL_COLOR_BLACK);
 	// Draws the entire buffer to the screen

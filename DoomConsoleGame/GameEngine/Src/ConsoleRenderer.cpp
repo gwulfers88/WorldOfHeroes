@@ -66,6 +66,23 @@ void ConsoleRenderer::DrawSprite(vec2 pos, vec2 dims, wchar_t* spriteData, u16 *
 	}
 }
 
+// Draws a sprite with the specified dimensions
+void ConsoleRenderer::DrawUI(vec2 pos, vec2 dims, Sprite* img)
+{
+	for (i32 y = 0; y < dims.y; y++)
+	{
+		for (i32 x = 0; x < dims.x; x++)
+		{
+			// Calculate the texel coordinate for the rectangle
+			vec2 sample = Vec2(x / dims.x, y / dims.y);
+			// Sample the texture you want to use using the texel coords.
+			u16 Color = SampleSprite(sample, img);
+			// Draw Pixel
+			DrawPixel({ pos.x + x, pos.y + y }, PIXEL_SOLID, Color);
+		}
+	}
+}
+
 // Clears the entire screen buffer to the desired color.
 void ConsoleRenderer::ClearBuffer(u16 color)
 {

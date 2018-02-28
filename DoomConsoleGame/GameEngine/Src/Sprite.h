@@ -5,6 +5,7 @@
 #define SPRITE_H
 
 #include "memory.h"
+#include "vec2.h"
 
 #pragma pack(push, 16)
 struct SpriteHeader
@@ -72,6 +73,22 @@ internal_ SpriteHeader GetSpriteHeader(Sprite sprite)
 	header.ColorOffset = sizeof(header) + PixelSize;
 
 	return header;
+}
+
+// Return the color at the specified texel coordinate (0 to 1)
+internal_ u16 SampleSprite(vec2 sample, Sprite* img)
+{
+	u16 Color = 0;
+
+	int sampleX = sample.x * img->Width;
+	int sampleY = sample.y * img->Height;
+
+	sampleX = Clamp(0, sampleX, (r32)img->Width - 1);
+	sampleY = Clamp(0, sampleY, (r32)img->Height - 1);
+
+	Color = img->Colors[sampleY * img->Width + sampleX];
+
+	return Color;
 }
 
 #endif

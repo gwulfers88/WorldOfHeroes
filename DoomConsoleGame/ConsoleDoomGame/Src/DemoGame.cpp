@@ -4,8 +4,7 @@
 
 void DemoGame::LoadContent()
 {
-	playerP.x = 1;
-	playerP.y = 1;
+	playerP = Vec2(1, 1);
 	playerAngle = 0;
 	FOV = PI / 4.0f;
 	depth = 40.0f;
@@ -61,8 +60,7 @@ void DemoGame::LoadContent()
 		}
 	}
 	
-	pillarP.x = 27.5f;
-	pillarP.y = 5.5f;
+	pillarP = Vec2(27.5f, 5.5f);
 	
 	// Load the wall texture
 	int wallHandle = platform_fileOpen("data/wall_01.sprt", "rb");
@@ -94,8 +92,7 @@ void DemoGame::LoadContent()
 		{
 			if (map[y * mapW + x] == 'S')
 			{
-				playerP.x = x;
-				playerP.y = y;
+				playerP = Vec2(x, y);
 			}
 		}
 	}
@@ -292,14 +289,7 @@ bool DemoGame::Update(float deltaTime)
 				if (HitWall)
 				{
 					r32 sampleY = ((r32)y - DistanceToCeiling) / (DistanceToFloor - DistanceToCeiling);
-
-					i32 sampleIndexX = sampleX * wall.Width;
-					i32 sampleIndexY = sampleY * wall.Height;
-
-					sampleIndexX = Clamp(0, sampleIndexX, wall.Width - 1);
-					sampleIndexY = Clamp(0, sampleIndexY, wall.Height - 1);
-
-					Color = wall.Colors[sampleIndexY * wall.Width + sampleIndexX];
+					Color = SampleSprite(Vec2(sampleX, sampleY), &pillar);			
 				}
 				if (HitDoor)
 				{
@@ -390,6 +380,7 @@ bool DemoGame::Update(float deltaTime)
 		}
 	}
 
+	/// HUD Routines Below
 	// 2D Map
 	vec2 screenOnePos = Vec2(10, 10);
 	
@@ -420,11 +411,16 @@ bool DemoGame::Update(float deltaTime)
 			renderer.DrawPixel(playerP + screenOnePos + eye * y, PIXEL_SOLID, PIXEL_COLOR_LIGHT_BLUE);
 		}
 	}
+
 	// Draw player
 	renderer.DrawPixel(playerP + screenOnePos, PIXEL_SOLID, PIXEL_COLOR_LIGHT_GREEN);
 
 	// Draw Pillar
 	renderer.DrawPixel(pillarP + screenOnePos, PIXEL_SEMI_DARK, PIXEL_COLOR_LIGHT_RED);
+
+	vec2 imgP = Vec2(10, 10);
+	vec2 imgDims = Vec2(100, 300);
+	renderer.DrawUI(imgP, imgDims, &wall);
 
 	// Present buffers to the screen
 	renderer.PresentBuffer();
