@@ -13,7 +13,13 @@ This file is the header file for the Weapons Class
 #define WEAPONS_H
 
 #include "platform.h"
-#include "Player.h"
+
+// Weapons Index
+enum WEAPONS {
+	FIST = 0,
+	PISTOL
+};
+
 
 class Weapons {
 public:
@@ -28,10 +34,11 @@ public:
 	// Getters
 	i32 getAmmo() const;
 	i32 getMaxAmmo() const;
-		
+
 private:
 	i32 _ammo;
 	i32 _maxAmmo;
+	i32 _ammoPickup;
 
 	WEAPONS _weaponIndex; // Individual Weapon Index 
 };

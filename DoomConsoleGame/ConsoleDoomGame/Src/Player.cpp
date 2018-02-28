@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 /**********************************************************
 File Name: Player.cpp
 Start Date: 01/23/2018
@@ -10,9 +9,6 @@ Description:
 	This file is the source file for the Player Class
 ===========================================================
 **********************************************************/
-
-=======
->>>>>>> a466b0535179018ec01b36400d5cbc574e86b7ae
 #include "Player.h"
 
 Player::Player(i8* name)
