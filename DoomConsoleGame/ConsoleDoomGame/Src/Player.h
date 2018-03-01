@@ -15,11 +15,6 @@ Description:
 #include "platform.h"
 #include "Weapons.h"
 
-// Weapons Index
-enum WEAPONS {
-	FIST = 0,
-	PISTOL
-};
 
 class Player {
 public:
