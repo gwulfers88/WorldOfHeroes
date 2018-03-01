@@ -229,6 +229,28 @@ void ConsoleApp::Run(BaseGame* game)
 						Controller.ActionRight.pressed = false;
 					}
 				}
+				if (key == VK_UP)
+				{
+					if ((GetAsyncKeyState(key) & 0x8000))
+					{
+						Controller.ActionUp.pressed = true;
+					}
+					else
+					{
+						Controller.ActionUp.pressed = false;
+					}
+				}
+				if (key == VK_DOWN)
+				{
+					if ((GetAsyncKeyState(key) & 0x8000))
+					{
+						Controller.ActionDown.pressed = true;
+					}
+					else
+					{
+						Controller.ActionDown.pressed = false;
+					}
+				}
 			}
 
 			game->SetController(&Controller);

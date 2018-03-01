@@ -5,6 +5,7 @@
 #define SPRITE_H
 
 #include "memory.h"
+#include "File.h"
 #include "vec2.h"
 
 #pragma pack(push, 16)
@@ -89,6 +90,33 @@ internal_ u16 SampleSprite(vec2 sample, Sprite* img)
 	Color = img->Colors[sampleY * img->Width + sampleX];
 
 	return Color;
+}
+
+internal_ void LoadSprite(char* filename, Sprite* img)
+{
+	// Load the pillar texture
+	int spriteHandle = platform_fileOpen(filename, "rb");
+	FileReadData fileData = platform_fileReadEntire(spriteHandle);
+	platform_fileClose(spriteHandle);
+	SpriteHeader* header = (SpriteHeader*)fileData.Data;
+	if (header)
+	{
+		if (header->Sentinal[0] == 'S' && header->Sentinal[1] == 'P' && header->Sentinal[2] == 'R' && header->Sentinal[3] == 'T')
+		{
+			img->Width = header->Width;
+			img->Height = header->Height;
+			u16* colors = (u16*)((u8*)fileData.Data + header->ColorOffset);
+			wchar_t* pixels = (wchar_t*)((u8*)fileData.Data + header->PixelOffset);
+			img->Colors = CreateArray(Memory::GetPersistantHandle(), u16, img->Width * img->Height);
+			img->Pixels = CreateArray(Memory::GetPersistantHandle(), wchar_t, img->Width * img->Height);
+
+			memcpy_s(img->Colors, img->Width*img->Height * sizeof(u16), colors, img->Width*img->Height * sizeof(u16));
+			memcpy_s(img->Pixels, img->Width*img->Height * sizeof(wchar_t), pixels, img->Width*img->Height * sizeof(wchar_t));
+
+			if (fileData.Data)
+				free(fileData.Data);
+		}
+	}
 }
 
 #endif

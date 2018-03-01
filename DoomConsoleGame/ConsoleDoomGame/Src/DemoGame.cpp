@@ -37,54 +37,17 @@ void DemoGame::LoadContent()
 	};
 
 	// Load the pillar texture
-	int pillarHandle = platform_fileOpen("data/pillar_01.sprt", "rb");
-	FileReadData pillarData = platform_fileReadEntire(pillarHandle);
-	platform_fileClose(pillarHandle);
-	SpriteHeader* pillarHeader = (SpriteHeader*)pillarData.Data;
-	if (pillarHeader)
-	{
-		if (pillarHeader->Sentinal[0] == 'S' && pillarHeader->Sentinal[1] == 'P' && pillarHeader->Sentinal[2] == 'R' && pillarHeader->Sentinal[3] == 'T')
-		{
-			pillar.Width = pillarHeader->Width;
-			pillar.Height = pillarHeader->Height;
-			u16* colors = (u16*)((u8*)pillarData.Data + pillarHeader->ColorOffset);
-			wchar_t* pixels = (wchar_t*)((u8*)pillarData.Data + pillarHeader->PixelOffset);
-			pillar.Colors = CreateArray(Memory::GetPersistantHandle(), u16, pillar.Width * pillar.Height);
-			pillar.Pixels = CreateArray(Memory::GetPersistantHandle(), wchar_t, pillar.Width * pillar.Height);
-
-			memcpy_s(pillar.Colors, pillar.Width*pillar.Height * sizeof(u16), colors, pillar.Width*pillar.Height * sizeof(u16));
-			memcpy_s(pillar.Pixels, pillar.Width*pillar.Height * sizeof(wchar_t), pixels, pillar.Width*pillar.Height * sizeof(wchar_t));
-
-			if(pillarData.Data)
-				free(pillarData.Data);
-		}
-	}
-	
+	LoadSprite("data/pillar_01.sprt", &pillar);
 	pillarP = Vec2(27.5f, 5.5f);
 	
 	// Load the wall texture
-	int wallHandle = platform_fileOpen("data/wall_01.sprt", "rb");
-	FileReadData wallData = platform_fileReadEntire(wallHandle);
-	platform_fileClose(wallHandle);
-	SpriteHeader* wallHeader = (SpriteHeader*)wallData.Data;
-	if (wallHeader)
-	{
-		if (wallHeader->Sentinal[0] == 'S' && wallHeader->Sentinal[1] == 'P' && wallHeader->Sentinal[2] == 'R' && wallHeader->Sentinal[3] == 'T')
-		{
-			wall.Width = wallHeader->Width;
-			wall.Height = wallHeader->Height;
-			u16* colors = (u16*)((u8*)wallData.Data + wallHeader->ColorOffset);
-			wchar_t* pixels = (wchar_t*)((u8*)wallData.Data + wallHeader->PixelOffset);
-			wall.Colors = CreateArray(Memory::GetPersistantHandle(), u16, wall.Width * wall.Height);
-			wall.Pixels = CreateArray(Memory::GetPersistantHandle(), wchar_t, wall.Width * wall.Height);
+	LoadSprite("data/wall_01.sprt", &wall);
 
-			memcpy_s(wall.Colors, wall.Width*wall.Height * sizeof(u16), colors, wall.Width*wall.Height * sizeof(u16));
-			memcpy_s(wall.Pixels, wall.Width*wall.Height * sizeof(wchar_t), pixels, wall.Width*wall.Height * sizeof(wchar_t));
-
-			if (wallData.Data)
-				free(wallData.Data);
-		}
-	}
+	// Load the hud background texture
+	LoadSprite("data/hud_bg.sprt", &hudBG);
+	i32 w = RoundReal32ToInt32(renderer.GetRenderBuffers()->Width / 7.0f);
+	hudDims = Vec2((r32)w, 20);
+	hudP = Vec2(0, (r32)renderer.GetRenderBuffers()->Height - hudDims.y);
 
 	for (int y = 0; y < mapH; ++y)
 	{
@@ -165,6 +128,7 @@ bool DemoGame::Update(float deltaTime)
 				playerP.y += sinf(playerAngle) * playerSpeed * deltaTime;
 			}
 		}
+
 	}
 
 	// Clear buffer to certain color
@@ -251,7 +215,7 @@ bool DemoGame::Update(float deltaTime)
 		}
 
 		// Calculate the distance to the ceiling
-		int DistanceToCeiling = (((float)screenHeight / 2) - ((float)screenHeight / DistanceToWall));
+		int DistanceToCeiling = (((float)screenHeight * 0.5f) - ((float)screenHeight / DistanceToWall));
 		int DistanceToFloor = (screenHeight - DistanceToCeiling);
 		
 		renderer.GetRenderBuffers()->DepthBuffer[x] = DistanceToWall;
@@ -289,18 +253,18 @@ bool DemoGame::Update(float deltaTime)
 				if (HitWall)
 				{
 					r32 sampleY = ((r32)y - DistanceToCeiling) / (DistanceToFloor - DistanceToCeiling);
-					Color = SampleSprite(Vec2(sampleX, sampleY), &pillar);			
+					Color = SampleSprite(Vec2(sampleX, sampleY), &wall);
+					renderer.DrawPixel({ (r32)x, (r32)y }, shade, Color);
 				}
 				if (HitDoor)
 				{
-
+					renderer.DrawPixel({ (r32)x, (r32)y }, shade, Color);
 				}
-				renderer.DrawPixel({ (r32)x, (r32)y }, shade, Color);
 			}
 			else
 			{
 				// Shade floor based on distance
-				float b = 1.0f - (((float)y - screenHeight / 2.0f) / ((float)screenHeight / 2.0f));
+				float b = 1.0f - (((float)y - screenHeight * 0.5f) / ((float)screenHeight * 0.5f));
 				if (b < 0.25)
 				{
 					shade = PIXEL_SOLID;
@@ -327,59 +291,8 @@ bool DemoGame::Update(float deltaTime)
 	}
 
 	// drawing Objects
-	// We want to calculate the distance between the object and the player
-	float directionToObjX = pillarP.x - playerP.x;
-	float directionToObjY = pillarP.y - playerP.y;
-	float distanceToPlayer = sqrtf(directionToObjX*directionToObjX + directionToObjY*directionToObjY);
-
-	// Then we want to create our forward vector
-	// Calculate the objects angle between the forward vector and direction that the object is in.
-	vec2 eye = {};
-	eye.x = sinf(playerAngle);
-	eye.y = cosf(playerAngle);
-	float objectAngle = atan2f(eye.y, eye.x) - atan2f(directionToObjY, directionToObjX);
-	if (objectAngle < -PI)
-		objectAngle += 2.0f * PI;
-	if (objectAngle > PI)
-		objectAngle -= 2.0f * PI;
-
-	// Here we check to see if the angle is with in the view.
-	bool ObjectInView = fabs(objectAngle) < FOV / 2.0f;
-
-	// If the object is in view and the distance from the object to the player is with in a certain range
-	if (ObjectInView && distanceToPlayer >= 0.5f && distanceToPlayer < depth)
-	{
-		// Then we want to calculate the objects dimensions in world space.
-		// First we calculate where the objects ceiling starts based on the distance
-		// Then the floor location
-		// this will give us how tall the object will look with in our view. The farther the smaller it will be. The closer the bigger it will be.
-		float ObjectCeiling = (float)(screenHeight / 2.0f) - screenHeight / distanceToPlayer;
-		float ObjectFloor = screenHeight - ObjectCeiling;
-		float ObjectHeight = ObjectFloor - ObjectCeiling;
-		float ObjectAspectRatio = (float)pillar.Height / (float)pillar.Width;
-		float ObjectWidth = ObjectHeight / ObjectAspectRatio;
-		float ObjectCenter = (0.5f * (objectAngle / (FOV / 2.0f)) + 0.5f) * (float)screenWidth;
-
-		for (int y = 0; y < ObjectHeight; ++y)
-		{
-			for (int x = 0; x < ObjectWidth; ++x)
-			{
-				float SampleX = x / ObjectWidth;
-				float SampleY = y / ObjectHeight;
-				int Row = SampleY * pillar.Height;
-				int Col = SampleX * pillar.Width;
-				wchar_t glyph = pillar.Pixels[Row * pillar.Width + Col];
-				u16 color = pillar.Colors[Row * pillar.Width + Col];
-				int ObjectCol = (int)(ObjectCenter + x - (ObjectWidth / 2.0f));
-				if (ObjectCol >= 0 && ObjectCol < screenWidth)
-				{
-					if (glyph != ' ' && renderer.GetRenderBuffers()->DepthBuffer[ObjectCol] >= distanceToPlayer)
-						renderer.DrawPixel({(r32)ObjectCol, (r32)ObjectCeiling + y}, glyph, color);
-				}
-			}
-		}
-	}
-
+	renderer.ProjectObject(playerP, playerAngle, FOV, depth, pillarP, &pillar);
+	
 	/// HUD Routines Below
 	// 2D Map
 	vec2 screenOnePos = Vec2(10, 10);
@@ -403,6 +316,7 @@ bool DemoGame::Update(float deltaTime)
 	for (int x = 0; x < mapW; ++x)
 	{
 		float ViewAngle = (playerAngle - FOV / 2) + ((float)x / mapW) * FOV;
+		vec2 eye = {};
 		eye.x = sinf(ViewAngle);
 		eye.y = cosf(ViewAngle);
 
@@ -418,9 +332,10 @@ bool DemoGame::Update(float deltaTime)
 	// Draw Pillar
 	renderer.DrawPixel(pillarP + screenOnePos, PIXEL_SEMI_DARK, PIXEL_COLOR_LIGHT_RED);
 
-	vec2 imgP = Vec2(10, 10);
-	vec2 imgDims = Vec2(100, 300);
-	renderer.DrawUI(imgP, imgDims, &wall);
+	for (int i = 0; i < 7; i++)
+	{
+		renderer.DrawUI(hudP + Vec2(i * (hudDims.x), 0), hudDims, &hudBG);
+	}
 
 	// Present buffers to the screen
 	renderer.PresentBuffer();

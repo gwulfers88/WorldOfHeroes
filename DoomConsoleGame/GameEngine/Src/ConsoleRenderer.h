@@ -66,6 +66,9 @@ public:
 	void DrawRect(vec2 pos, vec2 dims, wchar_t pixel = PIXEL_SOLID, u16 color = PIXEL_COLOR_WHITE);
 	// Draws a sprite onto the screen buffer using desired x, y pos and color.
 	void DrawSprite(vec2 pos, vec2 dims, wchar_t* spriteData, u16 *colorData);
+	// Projects 2D object into 3D World.
+	void ProjectObject(vec2 playerP, float playerAngle, float FOV, float depth, vec2 objP, Sprite* img);
+
 	// Draws a sprite with the specified dimensions
 	void DrawUI(vec2 pos, vec2 dims, Sprite* img);
 	// Clears the entire screen buffer to the desired color.

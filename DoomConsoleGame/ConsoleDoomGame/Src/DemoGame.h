@@ -37,6 +37,11 @@ protected:
 	vec2 pillarP;
 	Sprite pillar;
 	Sprite wall;
+	Sprite hudBG;
+
+	vec2 hudP;
+	vec2 hudDims;
+
 };
 
 #endif

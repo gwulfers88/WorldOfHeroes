@@ -66,6 +66,62 @@ void ConsoleRenderer::DrawSprite(vec2 pos, vec2 dims, wchar_t* spriteData, u16 *
 	}
 }
 
+// Projects 2D object into 3D World.
+void ConsoleRenderer::ProjectObject(vec2 playerP, float playerAngle, float FOV, float depth, vec2 objP, Sprite* img)
+{
+	// drawing Objects
+	// We want to calculate the distance between the object and the player
+	vec2 directionToObj = objP - playerP;
+	float distanceToPlayer = Length(directionToObj);
+
+	// Then we want to create our forward vector
+	// Calculate the objects angle between the forward vector and direction that the object is in.
+	vec2 eye = {};
+	eye.x = sinf(playerAngle);
+	eye.y = cosf(playerAngle);
+	float objectAngle = atan2f(eye.y, eye.x) - atan2f(directionToObj.y, directionToObj.x);
+	if (objectAngle < -PI)
+		objectAngle += 2.0f * PI;
+	if (objectAngle > PI)
+		objectAngle -= 2.0f * PI;
+
+	// Here we check to see if the angle is with in the view.
+	bool ObjectInView = fabs(objectAngle) < FOV / 2.0f;
+
+	// If the object is in view and the distance from the object to the player is with in a certain range
+	if (ObjectInView && distanceToPlayer >= 0.5f && distanceToPlayer < depth)
+	{
+		// Then we want to calculate the objects dimensions in world space.
+		// First we calculate where the objects ceiling starts based on the distance
+		// Then the floor location
+		// this will give us how tall the object will look with in our view. The farther the smaller it will be. The closer the bigger it will be.
+		float ObjectCeiling = (float)(screen->Height / 2.0f) - screen->Height / distanceToPlayer;
+		float ObjectFloor = screen->Height - ObjectCeiling;
+		float ObjectHeight = ObjectFloor - ObjectCeiling;
+		float ObjectAspectRatio = (float)img->Height / (float)img->Width;
+		float ObjectWidth = ObjectHeight / ObjectAspectRatio;
+		float ObjectCenter = (0.5f * (objectAngle / (FOV / 2.0f)) + 0.5f) * (float)screen->Width;
+
+		for (int y = 0; y < ObjectHeight; ++y)
+		{
+			for (int x = 0; x < ObjectWidth; ++x)
+			{
+				vec2 sample = Vec2(x / ObjectWidth, y / ObjectHeight);
+				int Row = sample.y * img->Height;
+				int Col = sample.x * img->Width;
+				wchar_t glyph = img->Pixels[Row * img->Width + Col];
+				u16 color = img->Colors[Row * img->Width + Col];
+				int ObjectCol = RoundReal32ToInt32((ObjectCenter + x - (ObjectWidth / 2.0f)));
+				if (ObjectCol >= 0 && ObjectCol < screen->Width)
+				{
+					if (glyph != ' ' && screen->DepthBuffer[ObjectCol] >= distanceToPlayer)
+						DrawPixel({ (r32)ObjectCol, (r32)ObjectCeiling + y }, glyph, color);
+				}
+			}
+		}
+	}
+}
+
 // Draws a sprite with the specified dimensions
 void ConsoleRenderer::DrawUI(vec2 pos, vec2 dims, Sprite* img)
 {
