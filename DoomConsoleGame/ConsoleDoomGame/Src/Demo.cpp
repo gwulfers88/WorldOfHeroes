@@ -14,10 +14,6 @@ This is the entry point to our progrqam.
 #include "ConsoleApp.h"
 #include "DemoGame.h"
 
-// Inventory Vars
-int ammo = 0;
-int shield = 0;
-int health = 0;
 
 
 //int argCount -- Used to determine the number of arguments being passed to the application
