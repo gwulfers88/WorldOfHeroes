@@ -132,9 +132,11 @@ void ConsoleRenderer::DrawUI(vec2 pos, vec2 dims, Sprite* img)
 			// Calculate the texel coordinate for the rectangle
 			vec2 sample = Vec2(x / dims.x, y / dims.y);
 			// Sample the texture you want to use using the texel coords.
-			u16 Color = SampleSprite(sample, img);
+			SpriteSample result = SampleSprite(sample, img);
+
 			// Draw Pixel
-			DrawPixel({ pos.x + x, pos.y + y }, PIXEL_SOLID, Color);
+			if(result.Pixel != L' ')
+				DrawPixel({ pos.x + x, pos.y + y }, PIXEL_SOLID, result.Color);
 		}
 	}
 }

@@ -26,7 +26,7 @@ union vec3
 	r32 E[3];
 };
 
-vec3 operator*(r32 a, vec3 b)
+internal_ vec3 operator*(r32 a, vec3 b)
 {
 	vec3 result = {};
 	result.x = a * b.x;
@@ -35,19 +35,19 @@ vec3 operator*(r32 a, vec3 b)
 	return result;
 }
 
-vec3 operator*(vec3 b, r32 a)
+internal_ vec3 operator*(vec3 b, r32 a)
 {
 	vec3 result = a*b;
 	return result;
 }
 
-vec3& operator*=(vec3& b, r32 a)
+internal_ vec3& operator*=(vec3& b, r32 a)
 {
 	b = a * b;
 	return b;
 }
 
-vec3 operator-(vec3 a)
+internal_ vec3 operator-(vec3 a)
 {
 	vec3 result;
 	result.x = -a.x;
@@ -56,7 +56,7 @@ vec3 operator-(vec3 a)
 	return result;
 }
 
-vec3 operator-(vec3 a, vec3 b)
+internal_ vec3 operator-(vec3 a, vec3 b)
 {
 	vec3 result;
 	result.x = a.x - b.y;
@@ -65,7 +65,7 @@ vec3 operator-(vec3 a, vec3 b)
 	return result;
 }
 
-vec3 operator+(vec3 a, vec3 b)
+internal_ vec3 operator+(vec3 a, vec3 b)
 {
 	vec3 result;
 	result.x = a.x + b.x;
@@ -74,44 +74,44 @@ vec3 operator+(vec3 a, vec3 b)
 	return result;
 }
 
-vec3& operator+=(vec3& a, vec3 b)
+internal_ vec3& operator+=(vec3& a, vec3 b)
 {
 	a = a + b;
 	return a;
 }
 
-vec3 Hadamard(vec3 a, vec3 b)
+internal_ vec3 Hadamard(vec3 a, vec3 b)
 {
 	vec3 result = { a.x * b.x, a.y * b.y, a.z * b.z };
 	return result;
 }
 
-r32 Dot(vec3 a, vec3 b)
+internal_ r32 Dot(vec3 a, vec3 b)
 {
 	r32 result = a.x*b.x + a.y*b.y + a.z*b.z;
 	return result;
 }
 
-r32 LengthSq(vec3 a)
+internal_ r32 LengthSq(vec3 a)
 {
 	r32 result = Dot(a, a);
 	return result;
 }
 
-r32 Length(vec3 a)
+internal_ r32 Length(vec3 a)
 {
 	r32 result = (r32)sqrt(LengthSq(a));
 	return result;
 }
 
-vec3 Normalize(vec3 A)
+internal_ vec3 Normalize(vec3 A)
 {
 	vec3 Result = A * (1.0f / Length(A));
 
 	return Result;
 }
 
-vec3 Cross(vec3 A, vec3 B)
+internal_ vec3 Cross(vec3 A, vec3 B)
 {
 	vec3 C = { 0 };
 	C.x = (A.y * B.z) - (A.z * B.y);
@@ -121,7 +121,7 @@ vec3 Cross(vec3 A, vec3 B)
 	return C;
 }
 
-vec3 Clamp01(vec3 val)
+internal_ vec3 Clamp01(vec3 val)
 {
 	vec3 result;
 	result.x = Clamp01(val.x);
@@ -130,7 +130,7 @@ vec3 Clamp01(vec3 val)
 	return result;
 }
 
-vec3 Vec3(r32 x, r32 y, r32 z)
+internal_ vec3 Vec3(r32 x, r32 y, r32 z)
 {
 	vec3 result = {};
 	result.x = x;
@@ -139,7 +139,7 @@ vec3 Vec3(r32 x, r32 y, r32 z)
 	return result;
 }
 
-vec3 Vec3(vec2 xy, r32 z)
+internal_ vec3 Vec3(vec2 xy, r32 z)
 {
 	vec3 result = {};
 	result.xy = xy;
@@ -147,7 +147,7 @@ vec3 Vec3(vec2 xy, r32 z)
 	return result;
 }
 
-vec3 Vec3(r32 x, vec2 yz)
+internal_ vec3 Vec3(r32 x, vec2 yz)
 {
 	vec3 result = {};
 	result.x = x;
@@ -155,7 +155,7 @@ vec3 Vec3(r32 x, vec2 yz)
 	return result;
 }
 
-vec3 Vec3(r32 x)
+internal_ vec3 Vec3(r32 x)
 {
 	vec3 Result = {};
 
@@ -173,7 +173,7 @@ struct mat4x4
 	r32 E[4][4];
 };
 
-inline mat4x4
+internal_ inline mat4x4
 operator*(mat4x4 A, mat4x4 B)
 {
 	// TODO: Optimize this piece of code to make it better
@@ -193,7 +193,7 @@ operator*(mat4x4 A, mat4x4 B)
 	return R;
 }
 
-vec3
+internal_ vec3
 Transform(mat4x4 A, vec3 P, r32 PW = 1.0f)
 {
 	vec3 R = {};
@@ -205,7 +205,7 @@ Transform(mat4x4 A, vec3 P, r32 PW = 1.0f)
 	return R;
 }
 
-inline vec3
+internal_ inline vec3
 operator*(mat4x4 A, vec3 P)
 {
 	vec3 R = Transform(A, P, 1.0f);
@@ -213,7 +213,7 @@ operator*(mat4x4 A, vec3 P)
 	return R;
 }
 
-inline vec3
+internal_ inline vec3
 operator*(vec3 P, mat4x4 A)
 {
 	vec3 R = Transform(A, P, 1.0f);
@@ -221,7 +221,7 @@ operator*(vec3 P, mat4x4 A)
 	return R;
 }
 
-mat4x4
+internal_ mat4x4
 Identity(void)
 {
 	mat4x4 R =
@@ -237,7 +237,7 @@ Identity(void)
 	return R;
 }
 
-mat4x4
+internal_ mat4x4
 RotateX(r32 Angle)
 {
 	r32 c = cosf(Angle);
@@ -254,7 +254,7 @@ RotateX(r32 Angle)
 	return R;
 }
 
-mat4x4
+internal_ mat4x4
 RotateY(r32 Angle)
 {
 	r32 c = cosf(Angle);
@@ -271,7 +271,7 @@ RotateY(r32 Angle)
 	return R;
 }
 
-mat4x4
+internal_ mat4x4
 RotateZ(r32 Angle)
 {
 	r32 c = cosf(Angle);
@@ -288,7 +288,7 @@ RotateZ(r32 Angle)
 	return R;
 }
 
-mat4x4
+internal_ mat4x4
 Transpose(mat4x4 A)
 {
 	mat4x4 R = {};
@@ -304,7 +304,7 @@ Transpose(mat4x4 A)
 	return R;
 }
 
-mat4x4
+internal_ mat4x4
 PerspectiveProjection(r32 AspectWidthOverHeight, r32 FocalLength, r32 NearZ, r32 FarZ)
 {
 	r32 a = 1.0f;
@@ -335,7 +335,7 @@ PerspectiveProjection(r32 AspectWidthOverHeight, r32 FocalLength, r32 NearZ, r32
 	return R;
 }
 
-mat4x4
+internal_ mat4x4
 OrthographicProjection(r32 AspectWidthOverHeight)
 {
 	r32 a = 1.0f;
@@ -352,7 +352,7 @@ OrthographicProjection(r32 AspectWidthOverHeight)
 	return R;
 }
 
-mat4x4
+internal_ mat4x4
 Column3x3(vec3 X, vec3 Y, vec3 Z)
 {
 	mat4x4 R =
@@ -366,7 +366,7 @@ Column3x3(vec3 X, vec3 Y, vec3 Z)
 	return R;
 }
 
-mat4x4
+internal_ mat4x4
 Row3x3(vec3 X, vec3 Y, vec3 Z)
 {
 	mat4x4 R =
@@ -380,7 +380,7 @@ Row3x3(vec3 X, vec3 Y, vec3 Z)
 	return R;
 }
 
-mat4x4
+internal_ mat4x4
 Translate(mat4x4 A, vec3 T)
 {
 	mat4x4 R = A;
@@ -391,7 +391,7 @@ Translate(mat4x4 A, vec3 T)
 	return R;
 }
 
-inline vec3
+internal_ inline vec3
 GetColumn(mat4x4 A, u32 C)
 {
 	vec3 R = { A.E[0][C], A.E[1][C], A.E[2][C] };
@@ -399,7 +399,7 @@ GetColumn(mat4x4 A, u32 C)
 	return R;
 }
 
-inline vec3
+internal_ inline vec3
 GetRow(mat4x4 A, u32 R)
 {
 	vec3 Result = { A.E[R][0], A.E[R][1], A.E[R][2] };
@@ -407,7 +407,7 @@ GetRow(mat4x4 A, u32 R)
 	return Result;
 }
 
-mat4x4
+internal_ mat4x4
 CameraTransform(vec3 X, vec3 Y, vec3 Z, vec3 P)
 {
 	mat4x4 R = Row3x3(X, Y, Z);
@@ -416,7 +416,7 @@ CameraTransform(vec3 X, vec3 Y, vec3 Z, vec3 P)
 	return R;
 }
 
-mat4x4
+internal_ mat4x4
 LookAt(vec3 eye, vec3 target, vec3 up)
 {
 	vec3 zAxis = Normalize(eye - target);

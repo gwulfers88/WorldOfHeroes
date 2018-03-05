@@ -132,6 +132,12 @@ internal_ vec2 operator-(vec2 a, vec2 b)
 	return result;
 }
 
+internal_ vec2 operator-=(vec2& a, vec2 b)
+{
+	a = a - b;
+	return a;
+}
+
 internal_ vec2 operator+(vec2 a, vec2 b)
 {
 	vec2 result;
@@ -168,6 +174,18 @@ internal_ r32 Length(vec2 a)
 {
 	r32 result = (r32)sqrt(LengthSq(a));
 	return result;
+}
+
+internal_ vec2 Normalize(vec2 a)
+{
+	r32 Len = Length(a);
+	vec2 Result = {};
+	if (Len > 0)
+	{
+		Result.x = a.x / Len;
+		Result.y = a.y / Len;
+	}
+	return Result;
 }
 
 internal_ vec2 Perp(vec2 a)

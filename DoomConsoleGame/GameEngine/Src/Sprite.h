@@ -26,6 +26,12 @@ struct Sprite
 	wchar_t* Pixels;
 	u16 *Colors;
 };
+
+struct SpriteSample
+{
+	u16		Color;
+	wchar_t Pixel;
+};
 #pragma pack(pop)
 
 internal_ Sprite CreateSprite(MemoryHandle memory, i32 W, i32 H)
@@ -77,9 +83,9 @@ internal_ SpriteHeader GetSpriteHeader(Sprite sprite)
 }
 
 // Return the color at the specified texel coordinate (0 to 1)
-internal_ u16 SampleSprite(vec2 sample, Sprite* img)
+internal_ SpriteSample SampleSprite(vec2 sample, Sprite* img)
 {
-	u16 Color = 0;
+	SpriteSample Result = {};
 
 	int sampleX = sample.x * img->Width;
 	int sampleY = sample.y * img->Height;
@@ -87,9 +93,10 @@ internal_ u16 SampleSprite(vec2 sample, Sprite* img)
 	sampleX = Clamp(0, sampleX, (r32)img->Width - 1);
 	sampleY = Clamp(0, sampleY, (r32)img->Height - 1);
 
-	Color = img->Colors[sampleY * img->Width + sampleX];
+	Result.Color = img->Colors[sampleY * img->Width + sampleX];
+	Result.Pixel = img->Pixels[sampleY * img->Width + sampleX];
 
-	return Color;
+	return Result;
 }
 
 internal_ void LoadSprite(char* filename, Sprite* img)

@@ -2,10 +2,52 @@
 #include "platform.h"
 #include "File.h"
 
+struct Entity
+{
+	vec2 p;
+	vec2 dims;
+	vec2 forward;
+	float rotation;
+};
+
+Entity player = {};
+
+// This function prints strings using our font.
+void printString(ConsoleRenderer renderer, char* text, u32 textCount, Sprite* font, u32 fontCount, vec2 pos, vec2 dims)
+{
+	u32 row = 0;
+	for (int i = 0; i < textCount; i++)
+	{
+		char c = text[i];
+		int index = -1;
+
+		if (c >= 'a' && c <= 'z')
+		{
+			index = c - 'a';
+		}
+		else if (c >= '0' && c <= '9')
+		{
+			index = c - '0';
+			index += 26;
+		}
+
+		if (index < fontCount)
+		{
+			u32 x = (i * dims.x);
+			u32 y = (row * dims.y);
+			renderer.DrawUI(pos + Vec2(x, y), dims, font + index);
+		}
+	}
+}
+
 void DemoGame::LoadContent()
 {
+#if 0
 	playerP = Vec2(1, 1);
 	playerAngle = 0;
+#else
+	player.rotation = 0;
+#endif
 	FOV = PI / 4.0f;
 	depth = 40.0f;
 
@@ -36,6 +78,26 @@ void DemoGame::LoadContent()
 		L".................#######################"
 	};
 
+	// Load Fonts
+	char c = 'a';
+	for (int i = 0; i < ArrayCount(font); i++)
+	{
+		char fid[2] = { c, 0 };
+		char buffer[256] = {};
+		strcat(buffer, "data/fonts/font_");
+		strcat(buffer, fid);
+		strcat(buffer, ".sprt");
+
+		LoadSprite(buffer, font + i);
+		if (c == 'z')
+		{
+			c = '0';
+			continue;
+		}
+		c++;
+	}
+	fontDims = Vec2(8, 8);
+
 	// Load the pillar texture
 	LoadSprite("data/pillar_01.sprt", &pillar);
 	pillarP = Vec2(27.5f, 5.5f);
@@ -55,7 +117,12 @@ void DemoGame::LoadContent()
 		{
 			if (map[y * mapW + x] == 'S')
 			{
+#if 0
 				playerP = Vec2(x, y);
+#else
+				player.p = Vec2((r32)x, (r32)y);
+				player.dims = Vec2(0.5f, 0.5f);
+#endif
 			}
 		}
 	}
@@ -74,65 +141,119 @@ bool DemoGame::Update(float deltaTime)
 		// Forward / Backward Movement
 		if (Controller->MoveUp.pressed)
 		{
+#if 0
 			playerP.x += sinf(playerAngle) * playerSpeed * deltaTime;
 			playerP.y += cosf(playerAngle) * playerSpeed * deltaTime;
-
 			if (map[(int)playerP.y * mapW + (int)playerP.x] == L'#')
 			{
 				playerP.x -= sinf(playerAngle) * playerSpeed * deltaTime;
 				playerP.y -= cosf(playerAngle) * playerSpeed * deltaTime;
 			}
+#else
+			player.p += player.forward * playerSpeed * deltaTime;
+			if (map[(int)player.p.y * mapW + (int)player.p.x] == L'#')
+			{
+				player.p -= player.forward * playerSpeed * deltaTime;
+			}
+#endif
 		}
 		else if (Controller->MoveDown.pressed)
 		{
+#if 0 
 			playerP.x -= sinf(playerAngle) * playerSpeed * deltaTime;
 			playerP.y -= cosf(playerAngle) * playerSpeed * deltaTime;
-
 			if (map[(int)playerP.y * mapW + (int)playerP.x] == L'#')
 			{
 				playerP.x += sinf(playerAngle) * playerSpeed * deltaTime;
 				playerP.y += cosf(playerAngle) * playerSpeed * deltaTime;
 			}
+#else
+			player.p -= player.forward * playerSpeed * deltaTime;
+			if (map[(int)player.p.y * mapW + (int)player.p.x] == L'#')
+			{
+				player.p += player.forward * playerSpeed * deltaTime;
+			}
+#endif
 		}
 
 		// Roatting the Angle CCW / CW
 		if (Controller->MoveLeft.pressed)
 		{
+#if 0
 			playerAngle -= (playerSpeed * 0.75f) * deltaTime;
+#else
+			player.rotation -= (playerSpeed * 0.75f) * deltaTime;
+#endif
 		}
 		else if (Controller->MoveRight.pressed)
 		{
+#if 0
 			playerAngle += (playerSpeed * 0.75f) * deltaTime;
+#else
+			player.rotation += (playerSpeed * 0.75f) * deltaTime;
+#endif
 		}
+
+		player.forward = Normalize(Vec2(sinf(player.rotation), cosf(player.rotation)));
+
+		vec3 up = Vec3(0, 0, 1);
+		vec3 right = Cross(Vec3(player.forward, 0), up);
 
 		// Straffe Movement
 		if (Controller->ActionLeft.pressed)
 		{
+#if 0
 			playerP.x -= cosf(playerAngle) * playerSpeed * deltaTime;
 			playerP.y += sinf(playerAngle) * playerSpeed * deltaTime;
-
 			if (map[(int)playerP.y * mapW + (int)playerP.x] == L'#')
 			{
 				playerP.x += cosf(playerAngle) * playerSpeed * deltaTime;
 				playerP.y -= sinf(playerAngle) * playerSpeed * deltaTime;
 			}
+#else
+			player.p += -right.xy * playerSpeed * deltaTime;
+			if (map[(int)player.p.y * mapW + (int)player.p.x] == L'#')
+			{
+				player.p += right.xy * playerSpeed * deltaTime;
+			}
+#endif
 		}
 		else if (Controller->ActionRight.pressed)
 		{
+#if 0
 			playerP.x += cosf(playerAngle) * playerSpeed * deltaTime;
 			playerP.y -= sinf(playerAngle) * playerSpeed * deltaTime;
-
 			if (map[(int)playerP.y * mapW + (int)playerP.x] == L'#')
 			{
 				playerP.x -= cosf(playerAngle) * playerSpeed * deltaTime;
 				playerP.y += sinf(playerAngle) * playerSpeed * deltaTime;
 			}
+#else
+			player.p += right.xy * playerSpeed * deltaTime;
+			if (map[(int)player.p.y * mapW + (int)player.p.x] == L'#')
+			{
+				player.p += -right.xy * playerSpeed * deltaTime;
+			}
+#endif
 		}
 
 	}
 
+	vec2 pillarDims = Vec2(0.25f, 0.25f) + player.dims;
+	vec2 minPillarP = pillarP - pillarDims;
+	vec2 maxPillarP = pillarP + pillarDims;
+
+	if (player.p.x > minPillarP.x &&
+		player.p.x < maxPillarP.x &&
+		player.p.y > minPillarP.y &&
+		player.p.y < maxPillarP.y)
+	{
+		// Collision
+		player.p -= player.forward * playerSpeed * deltaTime;
+	}
+
 	// Clear buffer to certain color
-	//ClearBuffer(PIXEL_COLOR_GREY);
+	renderer.ClearBuffer(PIXEL_COLOR_GREY);
 
 	// Ray Casting Routine
 	int screenWidth = renderer.GetRenderBuffers()->Width;
@@ -141,7 +262,8 @@ bool DemoGame::Update(float deltaTime)
 	for (int x = 0; x < renderer.GetRenderBuffers()->Width; ++x)
 	{
 		// Find the ray angle based on the players Rotattion angle
-		float RayAngle = (playerAngle - FOV / 2) + ((float)x / screenWidth) * FOV;
+		//float RayAngle = (playerAngle - FOV / 2) + ((float)x / screenWidth) * FOV;
+		float RayAngle = (player.rotation - FOV / 2) + ((float)x / screenWidth) * FOV;
 
 		float StepSize = 0.01f;			// This is how far we will advanced the ray per iteration
 		float DistanceToWall = 0.0f;	// 
@@ -161,11 +283,10 @@ bool DemoGame::Update(float deltaTime)
 		{
 			DistanceToWall += StepSize;
 
-			i32 TestX = (playerP.x + eye.x * DistanceToWall);
-			i32 TestY = (playerP.y + eye.y * DistanceToWall);
+			i32 TestX = (player.p.x + eye.x * DistanceToWall);
+			i32 TestY = (player.p.y + eye.y * DistanceToWall);
 
-			r32 DX = (playerP.x + eye.x * DistanceToWall);
-			r32 DY = (playerP.y + eye.y * DistanceToWall);
+			vec2 deltaP = player.p + eye * DistanceToWall;
 
 			// Our ray has gone Out of bounds
 			if (TestX < 0 || TestX >= mapW || TestY < 0 || TestY >= mapH)
@@ -185,7 +306,7 @@ bool DemoGame::Update(float deltaTime)
 					Color = PIXEL_COLOR_DARK_CYAN;
 
 					vec2 wallMidP = Vec2((r32)TestX + 0.5f, (r32)TestY + 0.5f);
-					vec2 testP = playerP + eye * DistanceToWall;
+					vec2 testP = player.p + eye * DistanceToWall;
 					float testAngle = atan2f(testP.y - wallMidP.y, testP.x - wallMidP.x);
 
 					if (testAngle >= -PI * 0.25f && testAngle < PI * 0.25f)
@@ -200,12 +321,24 @@ bool DemoGame::Update(float deltaTime)
 				// Ray is still in bounds to test cell for Doors
 				else if (map[(i32)TestY * mapW + (i32)TestX] == L'D')
 				{
-					r32 Dh = TestX + 0.5f;
-
-					if (DX > Dh - 0.05f && DX < Dh + 0.05f)
+					vec2 doorMidP = Vec2((r32)TestX + 0.5f, (r32)TestY + 0.5f);
+					
+					if (deltaP.x > doorMidP.x - 0.05f && deltaP.x < doorMidP.x + 0.05f)
 					{
 						// Calculate the Texture coordinates here.
 						Color = PIXEL_COLOR_DARK_MAGENTA;
+						
+						vec2 testP = player.p + eye * DistanceToWall;
+						float testAngle = atan2f(testP.y - doorMidP.y, testP.x - doorMidP.x);
+
+						if (testAngle >= -PI * 0.25f && testAngle < PI * 0.25f)
+							sampleX = testP.y - TestY;
+						if (testAngle >= PI * 0.25f && testAngle < PI * 0.75f)
+							sampleX = testP.x - TestX;
+						if (testAngle < -PI * 0.25f && testAngle >= -PI * 0.75f)
+							sampleX = testP.x - TestX;
+						if (testAngle >= PI * 0.75f || testAngle < -PI * 0.75f)
+							sampleX = testP.y - TestY;
 
 						// Ray has hit a wall
 						HitDoor = true;
@@ -253,7 +386,7 @@ bool DemoGame::Update(float deltaTime)
 				if (HitWall)
 				{
 					r32 sampleY = ((r32)y - DistanceToCeiling) / (DistanceToFloor - DistanceToCeiling);
-					Color = SampleSprite(Vec2(sampleX, sampleY), &wall);
+					Color = SampleSprite(Vec2(sampleX, sampleY), &wall).Color;
 					renderer.DrawPixel({ (r32)x, (r32)y }, shade, Color);
 				}
 				if (HitDoor)
@@ -291,8 +424,11 @@ bool DemoGame::Update(float deltaTime)
 	}
 
 	// drawing Objects
-	renderer.ProjectObject(playerP, playerAngle, FOV, depth, pillarP, &pillar);
-	
+	renderer.ProjectObject(player.p, player.rotation, FOV, depth, pillarP, &pillar);
+	renderer.ProjectObject(player.p, player.rotation, FOV, depth, pillarP + Vec2(1, 0), &pillar);
+	renderer.ProjectObject(player.p, player.rotation, FOV, depth, pillarP + Vec2(0, 1), &pillar);
+	renderer.ProjectObject(player.p, player.rotation, FOV, depth, pillarP + Vec2(1, 1), &pillar);
+
 	/// HUD Routines Below
 	// 2D Map
 	vec2 screenOnePos = Vec2(10, 10);
@@ -315,26 +451,56 @@ bool DemoGame::Update(float deltaTime)
 	// This will draw the players field of view on the 2D map.
 	for (int x = 0; x < mapW; ++x)
 	{
-		float ViewAngle = (playerAngle - FOV / 2) + ((float)x / mapW) * FOV;
+		float ViewAngle = (player.rotation - FOV / 2) + ((float)x / mapW) * FOV;
 		vec2 eye = {};
 		eye.x = sinf(ViewAngle);
 		eye.y = cosf(ViewAngle);
 
 		for (int y = 0; y < mapH; ++y)
 		{
-			renderer.DrawPixel(playerP + screenOnePos + eye * y, PIXEL_SOLID, PIXEL_COLOR_LIGHT_BLUE);
+			renderer.DrawPixel(player.p + screenOnePos + eye * y, PIXEL_SOLID, PIXEL_COLOR_LIGHT_BLUE);
 		}
 	}
 
 	// Draw player
-	renderer.DrawPixel(playerP + screenOnePos, PIXEL_SOLID, PIXEL_COLOR_LIGHT_GREEN);
+	renderer.DrawPixel(player.p + screenOnePos, PIXEL_SOLID, PIXEL_COLOR_LIGHT_GREEN);
 
 	// Draw Pillar
 	renderer.DrawPixel(pillarP + screenOnePos, PIXEL_SEMI_DARK, PIXEL_COLOR_LIGHT_RED);
 
+	// Drawing UI The dumb way
 	for (int i = 0; i < 7; i++)
 	{
-		renderer.DrawUI(hudP + Vec2(i * (hudDims.x), 0), hudDims, &hudBG);
+		vec2 bg_offset = Vec2(i * (hudDims.x), 0);
+		vec2 text_offset = Vec2(i * (hudDims.x), 10);
+		renderer.DrawUI(hudP + bg_offset, hudDims, &hudBG);
+		if (i == 0)
+		{
+			printString(renderer, "0", ArrayCount("0"), font, ArrayCount(font), hudP + bg_offset, fontDims);
+			u32 strW = ArrayCount("ammo") * fontDims.x;
+			u32 strHalf = RoundReal32ToUInt32(strW * 0.5f);
+			printString(renderer, "ammo", ArrayCount("ammo"), font, ArrayCount(font), hudP + text_offset, fontDims);
+		}
+		else if (i == 1)
+		{
+			printString(renderer, "100", ArrayCount("100"), font, ArrayCount(font), hudP + bg_offset, fontDims);
+			u32 strW = ArrayCount("health") * fontDims.x;
+			u32 strHalf = RoundReal32ToUInt32(strW * 0.5f);
+			printString(renderer, "health", ArrayCount("health"), font, ArrayCount(font), hudP + text_offset, fontDims);
+		}
+		else if (i == 2)
+		{
+			u32 strW = ArrayCount("arms") * fontDims.x;
+			u32 strHalf = RoundReal32ToUInt32(strW * 0.5f);
+			printString(renderer, "arms", ArrayCount("arms"), font, ArrayCount(font), hudP + text_offset, fontDims);
+		}
+		else if (i == 4)
+		{
+			printString(renderer, "100", ArrayCount("100"), font, ArrayCount(font), hudP + bg_offset, fontDims);
+			u32 strW = ArrayCount("armor") * fontDims.x;
+			u32 strHalf = RoundReal32ToUInt32(strW * 0.5f);
+			printString(renderer, "armor", ArrayCount("armor"), font, ArrayCount(font), hudP + text_offset, fontDims);
+		}
 	}
 
 	// Present buffers to the screen
