@@ -13,6 +13,7 @@ render the current game
 #define CRenderer_H
 
 #include "platform.h"
+#include "Sprite.h"
 #include "vec2.h"
 
 #pragma pack(push, 16)
@@ -24,6 +25,14 @@ struct ScreenBuffer
 	u16		*Attribs;
 	r32		*DepthBuffer;
 	HANDLE	consoleHandle;
+};
+
+struct Camera
+{
+	vec2 Position;
+	r32 rotation;
+	r32 FOV;
+	r32 Depth;
 };
 #pragma pack(pop)
 
@@ -65,6 +74,15 @@ public:
 	void DrawRect(vec2 pos, vec2 dims, wchar_t pixel = PIXEL_SOLID, u16 color = PIXEL_COLOR_WHITE);
 	// Draws a sprite onto the screen buffer using desired x, y pos and color.
 	void DrawSprite(vec2 pos, vec2 dims, wchar_t* spriteData, u16 *colorData);
+	// Projects 2D object into 3D World.
+	void ProjectObject(Camera* camera, vec2 objP, Sprite* img);
+	// Projects the world from 2D to 3D
+	void ProjectWorld(Camera* camera, wchar_t* Map, u32 MapW, u32 MapH, Sprite* wall);
+	// This function prints strings using our font.
+	void DrawString(char* text, u32 textCount, Sprite* font, u32 fontCount, vec2 pos, vec2 dims);
+
+	// Draws a sprite with the specified dimensions
+	void DrawUI(vec2 pos, vec2 dims, Sprite* img);
 	// Clears the entire screen buffer to the desired color.
 	void ClearBuffer(u16 color = PIXEL_COLOR_BLACK);
 	// Draws the entire buffer to the screen

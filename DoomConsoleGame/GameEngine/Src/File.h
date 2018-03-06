@@ -18,16 +18,16 @@
 #include "platform.h"
 
 #define MaxFileHandles 2
-FILE* FileHandles[MaxFileHandles];			// List of opened files that are in memory
+global_variable FILE* FileHandles[MaxFileHandles];			// List of opened files that are in memory
 global_variable i32 fileHandleCount = 0;	// counter of files
 
-struct FileReadData
+internal_ struct FileReadData
 {
 	void* Data;
 	i32 fileSize;
 };
 
-i32 platform_getFreeSlot()
+internal_ i32 platform_getFreeSlot()
 {
 	i32 Handle = -1;
 	for (int i = 0; i < MaxFileHandles; ++i)
@@ -42,7 +42,7 @@ i32 platform_getFreeSlot()
 	return Handle;
 }
 
-i32 platform_fileOpen(i8* filename, char* mode)
+internal_ i32 platform_fileOpen(i8* filename, char* mode)
 {
 	i32 Handle = platform_getFreeSlot();
 	Assert((Handle != -1));
@@ -61,7 +61,7 @@ i32 platform_fileOpen(i8* filename, char* mode)
 	return Handle;
 }
 
-void platform_fileSeek(i32 Handle, i32 offset)
+internal_ void platform_fileSeek(i32 Handle, i32 offset)
 {
 	Assert((Handle < MaxFileHandles));
 	FILE* file = FileHandles[Handle];
@@ -69,7 +69,7 @@ void platform_fileSeek(i32 Handle, i32 offset)
 		fseek(file, offset, SEEK_SET);
 }
 
-i32 platform_getFileSize(i32 Handle)
+internal_ i32 platform_getFileSize(i32 Handle)
 {
 	Assert((Handle < MaxFileHandles));
 	i32 size = 0;
@@ -86,7 +86,7 @@ i32 platform_getFileSize(i32 Handle)
 	return size;
 }
 
-void* platform_fileRead(i32 Handle, i32 sizeToRead)
+internal_ void* platform_fileRead(i32 Handle, i32 sizeToRead)
 {
 	void* buffer = 0;
 	Assert((Handle < MaxFileHandles));
@@ -101,7 +101,7 @@ void* platform_fileRead(i32 Handle, i32 sizeToRead)
 	return buffer;
 }
 
-FileReadData platform_fileReadEntire(i32 Handle)
+internal_ FileReadData platform_fileReadEntire(i32 Handle)
 {
 	FileReadData data = {};
 	Assert((Handle < MaxFileHandles));
@@ -115,7 +115,7 @@ FileReadData platform_fileReadEntire(i32 Handle)
 	return data;
 }
 
-void platform_fileWrite(i32 Handle, void* data, i32 sizeToWrite)
+internal_ void platform_fileWrite(i32 Handle, void* data, i32 sizeToWrite)
 {
 	Assert((Handle < MaxFileHandles));
 	FILE* file = FileHandles[Handle];
@@ -125,7 +125,7 @@ void platform_fileWrite(i32 Handle, void* data, i32 sizeToWrite)
 	}
 }
 
-void platform_fileClose(i32 Handle)
+internal_ void platform_fileClose(i32 Handle)
 {
 	Assert((Handle < MaxFileHandles));
 	FILE* file = FileHandles[Handle];

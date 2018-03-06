@@ -12,7 +12,7 @@ All of the code for the game will be held here within this class.
 
 #include "BaseGame.h"
 #include "Sprite.h"
-#include "vec2.h"
+#include "vec3.h"
 
 class DemoGame : public BaseGame
 {
@@ -29,14 +29,15 @@ protected:
 	int mapH;
 	wchar_t *map;
 
-	vec2 playerP;
-	float playerAngle;
-	float FOV;
-	float depth;
-
-	vec2 pillarP;
 	Sprite pillar;
 	Sprite wall;
+	Sprite hudBG;
+
+	vec2 hudP;
+	vec2 hudDims;
+
+	Sprite font[36];
+	vec2 fontDims;
 };
 
 #endif
