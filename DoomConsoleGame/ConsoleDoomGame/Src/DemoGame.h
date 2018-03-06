@@ -29,7 +29,6 @@ protected:
 	int mapH;
 	wchar_t *map;
 
-	vec2 pillarP;
 	Sprite pillar;
 	Sprite wall;
 	Sprite hudBG;
