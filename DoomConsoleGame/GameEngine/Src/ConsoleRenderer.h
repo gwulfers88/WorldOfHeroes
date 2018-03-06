@@ -26,6 +26,14 @@ struct ScreenBuffer
 	r32		*DepthBuffer;
 	HANDLE	consoleHandle;
 };
+
+struct Camera
+{
+	vec2 Position;
+	r32 rotation;
+	r32 FOV;
+	r32 Depth;
+};
 #pragma pack(pop)
 
 // Types of Pixels to use
@@ -67,7 +75,11 @@ public:
 	// Draws a sprite onto the screen buffer using desired x, y pos and color.
 	void DrawSprite(vec2 pos, vec2 dims, wchar_t* spriteData, u16 *colorData);
 	// Projects 2D object into 3D World.
-	void ProjectObject(vec2 playerP, float playerAngle, float FOV, float depth, vec2 objP, Sprite* img);
+	void ProjectObject(Camera* camera, vec2 objP, Sprite* img);
+	// Projects the world from 2D to 3D
+	void ProjectWorld(Camera* camera, wchar_t* Map, u32 MapW, u32 MapH, Sprite* wall);
+	// This function prints strings using our font.
+	void DrawString(char* text, u32 textCount, Sprite* font, u32 fontCount, vec2 pos, vec2 dims);
 
 	// Draws a sprite with the specified dimensions
 	void DrawUI(vec2 pos, vec2 dims, Sprite* img);

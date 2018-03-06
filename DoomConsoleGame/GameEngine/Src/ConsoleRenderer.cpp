@@ -66,19 +66,47 @@ void ConsoleRenderer::DrawSprite(vec2 pos, vec2 dims, wchar_t* spriteData, u16 *
 	}
 }
 
+// This function prints strings using our font.
+void ConsoleRenderer::DrawString(char* text, u32 textCount, Sprite* font, u32 fontCount, vec2 pos, vec2 dims)
+{
+	u32 row = 0;
+	for (int i = 0; i < textCount; i++)
+	{
+		char c = text[i];	// get the current character of the text
+		int index = -1;		// set the index to an invalid index
+
+		if (c >= 'a' && c <= 'z')	// Check for letters with in the text
+		{
+			index = c - 'a';	// the index is the letter number - 'a' ex; 'a' - 'a' = 0;
+		}
+		else if (c >= '0' && c <= '9')	// check for numbers in the text
+		{
+			index = c - '0';	// The index is the character - '0' ex: 1 - 0 = 1;
+			index += 26;		// offset the index by the number of letters in the alphabet to get to the numbers
+		}
+
+		if (index >= 0 && index < fontCount)
+		{
+			u32 x = (i * dims.x);	// offset the position of the letter by the width of the fonts
+			u32 y = (row * dims.y);	// offset the position of the letter by the height of the fonts
+			DrawUI(pos + Vec2(x, y), dims, font + index); // Draw the current font letter or number to the screen
+		}
+	}
+}
+
 // Projects 2D object into 3D World.
-void ConsoleRenderer::ProjectObject(vec2 playerP, float playerAngle, float FOV, float depth, vec2 objP, Sprite* img)
+void ConsoleRenderer::ProjectObject(Camera* camera, vec2 objP, Sprite* img)
 {
 	// drawing Objects
 	// We want to calculate the distance between the object and the player
-	vec2 directionToObj = objP - playerP;
+	vec2 directionToObj = objP - camera->Position;
 	float distanceToPlayer = Length(directionToObj);
 
 	// Then we want to create our forward vector
 	// Calculate the objects angle between the forward vector and direction that the object is in.
 	vec2 eye = {};
-	eye.x = sinf(playerAngle);
-	eye.y = cosf(playerAngle);
+	eye.x = sinf(camera->rotation);
+	eye.y = cosf(camera->rotation);
 	float objectAngle = atan2f(eye.y, eye.x) - atan2f(directionToObj.y, directionToObj.x);
 	if (objectAngle < -PI)
 		objectAngle += 2.0f * PI;
@@ -86,10 +114,10 @@ void ConsoleRenderer::ProjectObject(vec2 playerP, float playerAngle, float FOV, 
 		objectAngle -= 2.0f * PI;
 
 	// Here we check to see if the angle is with in the view.
-	bool ObjectInView = fabs(objectAngle) < FOV / 2.0f;
+	bool ObjectInView = fabs(objectAngle) < camera->FOV / 2.0f;
 
 	// If the object is in view and the distance from the object to the player is with in a certain range
-	if (ObjectInView && distanceToPlayer >= 0.5f && distanceToPlayer < depth)
+	if (ObjectInView && distanceToPlayer >= 0.5f && distanceToPlayer < camera->Depth)
 	{
 		// Then we want to calculate the objects dimensions in world space.
 		// First we calculate where the objects ceiling starts based on the distance
@@ -100,7 +128,7 @@ void ConsoleRenderer::ProjectObject(vec2 playerP, float playerAngle, float FOV, 
 		float ObjectHeight = ObjectFloor - ObjectCeiling;
 		float ObjectAspectRatio = (float)img->Height / (float)img->Width;
 		float ObjectWidth = ObjectHeight / ObjectAspectRatio;
-		float ObjectCenter = (0.5f * (objectAngle / (FOV / 2.0f)) + 0.5f) * (float)screen->Width;
+		float ObjectCenter = (0.5f * (objectAngle / (camera->FOV / 2.0f)) + 0.5f) * (float)screen->Width;
 
 		for (int y = 0; y < ObjectHeight; ++y)
 		{
@@ -117,6 +145,175 @@ void ConsoleRenderer::ProjectObject(vec2 playerP, float playerAngle, float FOV, 
 					if (glyph != ' ' && screen->DepthBuffer[ObjectCol] >= distanceToPlayer)
 						DrawPixel({ (r32)ObjectCol, (r32)ObjectCeiling + y }, glyph, color);
 				}
+			}
+		}
+	}
+}
+
+void ConsoleRenderer::ProjectWorld(Camera* camera, wchar_t* Map, u32 MapW, u32 MapH, Sprite* wall)
+{
+	// TODO: Should we pass the textures for the wall through???
+	
+	for (int x = 0; x < screen->Width; ++x)
+	{
+		// Find the ray angle based on the players Rotattion angle
+		//float RayAngle = (playerAngle - FOV / 2) + ((float)x / screenWidth) * FOV;
+		float RayAngle = (camera->rotation - camera->FOV / 2) + ((float)x / screen->Width) * camera->FOV;
+
+		float StepSize = 0.01f;			// This is how far we will advanced the ray per iteration
+		float DistanceToWall = 0.0f;	// 
+
+		bool HitWall = false;
+		bool HitDoor = false;
+
+		vec2 eye = {};
+		eye.x = sinf(RayAngle);
+		eye.y = cosf(RayAngle);
+
+		r32 sampleX = 0;
+
+		short Color = PIXEL_COLOR_WHITE;
+
+		while (!HitWall && !HitDoor && DistanceToWall < camera->Depth)
+		{
+			DistanceToWall += StepSize;
+
+			i32 TestX = (camera->Position.x + eye.x * DistanceToWall);
+			i32 TestY = (camera->Position.y + eye.y * DistanceToWall);
+
+			vec2 deltaP = camera->Position + eye * DistanceToWall;
+
+			// Our ray has gone Out of bounds
+			if (TestX < 0 || TestX >= MapW || TestY < 0 || TestY >= MapH)
+			{
+				HitWall = true;
+				DistanceToWall = camera->Depth;
+			}
+			else
+			{
+				// Ray is still in bounds to test cell for walls
+				if (Map[(i32)TestY * MapW + (i32)TestX] == L'#')
+				{
+					// Ray has hit a wall
+					HitWall = true;
+
+					// Calculate the Texture coordinates here.
+					Color = PIXEL_COLOR_DARK_CYAN;
+
+					vec2 wallMidP = Vec2((r32)TestX + 0.5f, (r32)TestY + 0.5f);
+					vec2 testP = camera->Position + eye * DistanceToWall;
+					float testAngle = atan2f(testP.y - wallMidP.y, testP.x - wallMidP.x);
+
+					if (testAngle >= -PI * 0.25f && testAngle < PI * 0.25f)
+						sampleX = testP.y - TestY;
+					if (testAngle >= PI * 0.25f && testAngle < PI * 0.75f)
+						sampleX = testP.x - TestX;
+					if (testAngle < -PI * 0.25f && testAngle >= -PI * 0.75f)
+						sampleX = testP.x - TestX;
+					if (testAngle >= PI * 0.75f || testAngle < -PI * 0.75f)
+						sampleX = testP.y - TestY;
+				}
+				// Ray is still in bounds to test cell for Doors
+				else if (Map[(i32)TestY * MapW + (i32)TestX] == L'D')
+				{
+					vec2 doorMidP = Vec2((r32)TestX + 0.5f, (r32)TestY + 0.5f);
+
+					if (deltaP.x > doorMidP.x - 0.05f && deltaP.x < doorMidP.x + 0.05f)
+					{
+						// Calculate the Texture coordinates here.
+						Color = PIXEL_COLOR_DARK_MAGENTA;
+
+						vec2 testP = camera->Position + eye * DistanceToWall;
+						float testAngle = atan2f(testP.y - doorMidP.y, testP.x - doorMidP.x);
+
+						if (testAngle >= -PI * 0.25f && testAngle < PI * 0.25f)
+							sampleX = testP.y - TestY;
+						if (testAngle >= PI * 0.25f && testAngle < PI * 0.75f)
+							sampleX = testP.x - TestX;
+						if (testAngle < -PI * 0.25f && testAngle >= -PI * 0.75f)
+							sampleX = testP.x - TestX;
+						if (testAngle >= PI * 0.75f || testAngle < -PI * 0.75f)
+							sampleX = testP.y - TestY;
+
+						// Ray has hit a wall
+						HitDoor = true;
+					}
+				}
+			}
+		}
+
+		// Calculate the distance to the ceiling
+		int DistanceToCeiling = (((float)screen->Height * 0.5f) - ((float)screen->Height / DistanceToWall));
+		int DistanceToFloor = (screen->Height - DistanceToCeiling);
+
+		screen->DepthBuffer[x] = DistanceToWall;
+
+		// Shade walls based on distance 
+		wchar_t shade = PIXEL_SOLID;
+
+		if (DistanceToWall <= camera->Depth / 16)
+		{
+			shade = PIXEL_SOLID;
+		}
+		else if (DistanceToWall < camera->Depth / 8)
+		{
+			shade = PIXEL_SEMI_DARK;
+		}
+		else if (DistanceToWall < camera->Depth / 4)
+		{
+			shade = PIXEL_MEDIUM_DARK;
+		}
+		else if (DistanceToWall < camera->Depth / 2)
+		{
+			shade = PIXEL_DARK;
+		}
+		else
+			shade = ' ';
+
+		for (int y = 0; y < screen->Height; ++y)
+		{
+			if (y <= DistanceToCeiling)
+			{
+				DrawPixel({ (r32)x, (r32)y }, PIXEL_SOLID, PIXEL_COLOR_BLACK);
+			}
+			else if (y > DistanceToCeiling && y <= DistanceToFloor)	// Wall
+			{
+				if (HitWall)
+				{
+					r32 sampleY = ((r32)y - DistanceToCeiling) / (DistanceToFloor - DistanceToCeiling);
+					Color = SampleSprite(Vec2(sampleX, sampleY), wall).Color;
+					DrawPixel({ (r32)x, (r32)y }, shade, Color);
+				}
+				if (HitDoor)
+				{
+					DrawPixel({ (r32)x, (r32)y }, shade, Color);
+				}
+			}
+			else
+			{
+				// Shade floor based on distance
+				float b = 1.0f - (((float)y - screen->Height * 0.5f) / ((float)screen->Height * 0.5f));
+				if (b < 0.25)
+				{
+					shade = PIXEL_SOLID;
+					Color = PIXEL_COLOR_DARK_GREEN;
+				}
+				else if (b < 0.5)
+				{
+					shade = PIXEL_SEMI_DARK;
+					Color = PIXEL_COLOR_DARK_GREEN;
+				}
+				else if (b < 0.75)
+				{
+					shade = PIXEL_MEDIUM_DARK;
+					Color = PIXEL_COLOR_DARK_GREEN;
+				}
+				else if (b < 0.9)
+				{
+					shade = PIXEL_DARK;
+					Color = PIXEL_COLOR_DARK_GREEN;
+				}
+				DrawPixel({ (r32)x, (r32)y }, shade, Color);
 			}
 		}
 	}

@@ -29,11 +29,6 @@ protected:
 	int mapH;
 	wchar_t *map;
 
-	//vec2 playerP;
-	//float playerAngle;
-	float FOV;
-	float depth;
-
 	vec2 pillarP;
 	Sprite pillar;
 	Sprite wall;
