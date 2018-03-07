@@ -16,24 +16,21 @@ Weapons::Weapons() {}
 Weapons::~Weapons() {}
 
 // When the player picks up ammo from the level
-i32 Weapons::addAmmo(i32 ammo) {
-	if (_ammo < _maxAmmo) {
+i32 Weapons::addAmmo(i32 ammoPickup) {
+	if (_ammo + ammoPickup < _maxAmmo) {
 
 		// Adds the ammo that is picked up to the current ammo
-		_ammo += _ammoPickup = _ammo;
-		if (_ammo >= _maxAmmo) {
-
-			// If the current ammo exceeds the maximum allowed ammo, set the current ammo to the max ammo.
-			_ammo = _maxAmmo;
-		}
+		_ammo += ammoPickup;
+	}
+	else {
+		_ammo = _maxAmmo;
 	}
 	return _ammo;
 }
 
-
 // Setter Functions
 void Weapons::setAmmo(i32 ammo) {
-	if (_ammo <= 0) {
+	if (ammo <= 0) {
 
 		// Makes Sure to Add Ammo to Weapons That Use Ammo
 		if (_weaponIndex != FIST) {
@@ -49,7 +46,21 @@ void Weapons::setAmmo(i32 ammo) {
 	}
 }
 
+void Weapons::setMaxAmmo(i32 maxAmmo) {
+	if (_weaponIndex != FIST) {
+		_maxAmmo = maxAmmo;
+	}
+}
+
+void Weapons::setWeaponIndex(WEAPONS w) {
+	_weaponIndex = w;
+}
+
 // Getter Functions
+WEAPONS Weapons::getWeaponIndex() const {
+	return _weaponIndex;
+}
+
 i32 Weapons::getAmmo() const {
 	return _ammo;
 }

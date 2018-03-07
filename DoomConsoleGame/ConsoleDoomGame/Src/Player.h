@@ -18,13 +18,22 @@ Description:
 
 class Player {
 public:
+	// Unit Test Only
+	Player();
 
 	Player(i8* name);
 	~Player(void);
 
+	void addWeaponToInventory(Weapons);
+	//void deleteWeaponFromInventory(Weapons);
+
 	// Setters
 	void setHealth(i32);
+	void setMaxHealth(i32 a = 100);
+
 	void setArmor(i32);
+	void setMaxArmor(i32 a = 100);
+
 	void setCurWeapons(WEAPONS newWeaponsIndex);
 	
 	// Getters

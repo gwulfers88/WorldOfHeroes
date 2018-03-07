@@ -30,16 +30,18 @@ public:
 
 	// Setters
 	void setAmmo(i32);
+	void setWeaponIndex(WEAPONS);
+	void setMaxAmmo(i32);
 	
 	// Getters
 	i32 getAmmo() const;
 	i32 getMaxAmmo() const;
+	WEAPONS getWeaponIndex() const;
 
 private:
 	i32 _ammo;
 	i32 _maxAmmo;
-	i32 _ammoPickup;
-
+	
 	WEAPONS _weaponIndex; // Individual Weapon Index 
 };
 #endif
