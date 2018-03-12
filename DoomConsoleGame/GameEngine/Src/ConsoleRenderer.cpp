@@ -150,7 +150,7 @@ void ConsoleRenderer::ProjectObject(Camera* camera, vec2 objP, Sprite* img)
 	}
 }
 
-void ConsoleRenderer::ProjectWorld(Camera* camera, wchar_t* Map, u32 MapW, u32 MapH, Sprite* wall)
+void ConsoleRenderer::ProjectWorld(Camera* camera, u32 MapW, u32 MapH, Sprite* wall)
 {
 	// TODO: Should we pass the textures for the wall through???
 	
@@ -191,54 +191,91 @@ void ConsoleRenderer::ProjectWorld(Camera* camera, wchar_t* Map, u32 MapW, u32 M
 			}
 			else
 			{
-				// Ray is still in bounds to test cell for walls
-				if (Map[(i32)TestY * MapW + (i32)TestX] == L'#')
+				for (u32 EntityIndex = 1; EntityIndex < EntityManager::EntityCount(); ++EntityIndex)
 				{
-					// Ray has hit a wall
-					HitWall = true;
+					Entity* TestEntity = EntityManager::GetEntity(EntityIndex);
 
-					// Calculate the Texture coordinates here.
-					Color = PIXEL_COLOR_DARK_CYAN;
-
-					vec2 wallMidP = Vec2((r32)TestX + 0.5f, (r32)TestY + 0.5f);
-					vec2 testP = camera->Position + eye * DistanceToWall;
-					float testAngle = atan2f(testP.y - wallMidP.y, testP.x - wallMidP.x);
-
-					if (testAngle >= -PI * 0.25f && testAngle < PI * 0.25f)
-						sampleX = testP.y - TestY;
-					if (testAngle >= PI * 0.25f && testAngle < PI * 0.75f)
-						sampleX = testP.x - TestX;
-					if (testAngle < -PI * 0.25f && testAngle >= -PI * 0.75f)
-						sampleX = testP.x - TestX;
-					if (testAngle >= PI * 0.75f || testAngle < -PI * 0.75f)
-						sampleX = testP.y - TestY;
-				}
-				// Ray is still in bounds to test cell for Doors
-				else if (Map[(i32)TestY * MapW + (i32)TestX] == L'D')
-				{
-					vec2 doorMidP = Vec2((r32)TestX + 0.5f, (r32)TestY + 0.5f);
-
-					if (deltaP.x > doorMidP.x - 0.05f && deltaP.x < doorMidP.x + 0.05f)
+					if (TestEntity->type == Entity_Wall)
 					{
-						// Calculate the Texture coordinates here.
-						Color = PIXEL_COLOR_DARK_MAGENTA;
+						vec2 minDim = TestEntity->position - TestEntity->dims;
+						vec2 maxDim = TestEntity->position + TestEntity->dims;
 
-						vec2 testP = camera->Position + eye * DistanceToWall;
-						float testAngle = atan2f(testP.y - doorMidP.y, testP.x - doorMidP.x);
+						if ((r32)TestX > minDim.x &&
+							(r32)TestX < maxDim.x &&
+							(r32)TestY > minDim.y &&
+							(r32)TestY < maxDim.y)
+						{
+							// Ray has hit a wall
+							HitWall = true;
 
-						if (testAngle >= -PI * 0.25f && testAngle < PI * 0.25f)
-							sampleX = testP.y - TestY;
-						if (testAngle >= PI * 0.25f && testAngle < PI * 0.75f)
-							sampleX = testP.x - TestX;
-						if (testAngle < -PI * 0.25f && testAngle >= -PI * 0.75f)
-							sampleX = testP.x - TestX;
-						if (testAngle >= PI * 0.75f || testAngle < -PI * 0.75f)
-							sampleX = testP.y - TestY;
+							// Calculate the Texture coordinates here.
+							Color = PIXEL_COLOR_DARK_CYAN;
 
-						// Ray has hit a wall
-						HitDoor = true;
+							vec2 wallMidP = Vec2((r32)TestX + 0.5f, (r32)TestY + 0.5f);
+							vec2 testP = camera->Position + eye * DistanceToWall;
+							float testAngle = atan2f(testP.y - wallMidP.y, testP.x - wallMidP.x);
+
+							if (testAngle >= -PI * 0.25f && testAngle < PI * 0.25f)
+								sampleX = testP.y - TestY;
+							if (testAngle >= PI * 0.25f && testAngle < PI * 0.75f)
+								sampleX = testP.x - TestX;
+							if (testAngle < -PI * 0.25f && testAngle >= -PI * 0.75f)
+								sampleX = testP.x - TestX;
+							if (testAngle >= PI * 0.75f || testAngle < -PI * 0.75f)
+								sampleX = testP.y - TestY;
+
+							break;
+						}
 					}
 				}
+				//// Ray is still in bounds to test cell for walls
+				//if (Map[(i32)TestY * MapW + (i32)TestX] == L'#')
+				//{
+				//	// Ray has hit a wall
+				//	HitWall = true;
+
+				//	// Calculate the Texture coordinates here.
+				//	Color = PIXEL_COLOR_DARK_CYAN;
+
+				//	vec2 wallMidP = Vec2((r32)TestX + 0.5f, (r32)TestY + 0.5f);
+				//	vec2 testP = camera->Position + eye * DistanceToWall;
+				//	float testAngle = atan2f(testP.y - wallMidP.y, testP.x - wallMidP.x);
+
+				//	if (testAngle >= -PI * 0.25f && testAngle < PI * 0.25f)
+				//		sampleX = testP.y - TestY;
+				//	if (testAngle >= PI * 0.25f && testAngle < PI * 0.75f)
+				//		sampleX = testP.x - TestX;
+				//	if (testAngle < -PI * 0.25f && testAngle >= -PI * 0.75f)
+				//		sampleX = testP.x - TestX;
+				//	if (testAngle >= PI * 0.75f || testAngle < -PI * 0.75f)
+				//		sampleX = testP.y - TestY;
+				//}
+				//// Ray is still in bounds to test cell for Doors
+				//else if (Map[(i32)TestY * MapW + (i32)TestX] == L'D')
+				//{
+				//	vec2 doorMidP = Vec2((r32)TestX + 0.5f, (r32)TestY + 0.5f);
+
+				//	if (deltaP.x > doorMidP.x - 0.05f && deltaP.x < doorMidP.x + 0.05f)
+				//	{
+				//		// Calculate the Texture coordinates here.
+				//		Color = PIXEL_COLOR_DARK_MAGENTA;
+
+				//		vec2 testP = camera->Position + eye * DistanceToWall;
+				//		float testAngle = atan2f(testP.y - doorMidP.y, testP.x - doorMidP.x);
+
+				//		if (testAngle >= -PI * 0.25f && testAngle < PI * 0.25f)
+				//			sampleX = testP.y - TestY;
+				//		if (testAngle >= PI * 0.25f && testAngle < PI * 0.75f)
+				//			sampleX = testP.x - TestX;
+				//		if (testAngle < -PI * 0.25f && testAngle >= -PI * 0.75f)
+				//			sampleX = testP.x - TestX;
+				//		if (testAngle >= PI * 0.75f || testAngle < -PI * 0.75f)
+				//			sampleX = testP.y - TestY;
+
+				//		// Ray has hit a wall
+				//		HitDoor = true;
+				//	}
+				//}
 			}
 		}
 

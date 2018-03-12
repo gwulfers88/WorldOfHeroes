@@ -138,6 +138,7 @@
     <ClInclude Include="Src\BaseGame.h" />
     <ClInclude Include="Src\ConsoleApp.h" />
     <ClInclude Include="Src\ConsoleRenderer.h" />
+    <ClInclude Include="Src\Entity.h" />
     <ClInclude Include="Src\File.h" />
     <ClInclude Include="Src\memory.h" />
     <ClInclude Include="Src\platform.h" />

@@ -15,6 +15,7 @@ render the current game
 #include "platform.h"
 #include "Sprite.h"
 #include "vec2.h"
+#include "Entity.h"
 
 #pragma pack(push, 16)
 struct ScreenBuffer
@@ -77,7 +78,7 @@ public:
 	// Projects 2D object into 3D World.
 	void ProjectObject(Camera* camera, vec2 objP, Sprite* img);
 	// Projects the world from 2D to 3D
-	void ProjectWorld(Camera* camera, wchar_t* Map, u32 MapW, u32 MapH, Sprite* wall);
+	void ProjectWorld(Camera* camera, u32 MapW, u32 MapH, Sprite* wall);
 	// This function prints strings using our font.
 	void DrawString(char* text, u32 textCount, Sprite* font, u32 fontCount, vec2 pos, vec2 dims);
 
