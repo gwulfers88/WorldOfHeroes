@@ -10,6 +10,7 @@ enum EntityType
 {
 	Entity_None,
 	Entity_Player,
+	Entity_Enemy,
 	Entity_Pillar,
 	Entity_Wall,
 	Entity_Door,
@@ -21,6 +22,7 @@ struct Entity
 	vec2 dims;
 	vec2 forward;
 	r32 rotation;
+	r32 speed;
 	u32 TexIndex;
 	EntityType type;
 };

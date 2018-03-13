@@ -68,6 +68,10 @@ public:
 	~ConsoleRenderer();
 	
 	ScreenBuffer* GetRenderBuffers();
+
+	// This function will build the world hash map.
+	void BuildWorldHash();
+
 	void SetScreenBuffer(ScreenBuffer *_screen);
 	// Draws a single pixel onto the screen buffer using the desired x, y position, type of pixel and color.
 	void DrawPixel(vec2 pos, wchar_t pixel = PIXEL_SOLID, u16 color = PIXEL_COLOR_WHITE);
@@ -78,7 +82,7 @@ public:
 	// Projects 2D object into 3D World.
 	void ProjectObject(Camera* camera, vec2 objP, Sprite* img);
 	// Projects the world from 2D to 3D
-	void ProjectWorld(Camera* camera, u32 MapW, u32 MapH, Sprite* wall);
+	void ProjectWorld(Camera* camera, wchar_t* Map, u32 MapW, u32 MapH, Sprite* wall);
 	// This function prints strings using our font.
 	void DrawString(char* text, u32 textCount, Sprite* font, u32 fontCount, vec2 pos, vec2 dims);
 
@@ -90,7 +94,16 @@ public:
 	void PresentBuffer();
 
 protected:
+	// Adds entity to hash
+	void AddEntityToHash(Entity* entity);
+	// gets entity from hash
+	Entity* GetEntityFromHash(vec2 pos);
+	// hash function generation
+	u32 HashFunction(vec2 pos);
+
 	ScreenBuffer *screen;
+	Entity* worldHash;
+	u32 worldHashCount;
 
 };
 
