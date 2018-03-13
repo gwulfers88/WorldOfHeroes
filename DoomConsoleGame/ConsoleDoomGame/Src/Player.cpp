@@ -1,7 +1,8 @@
 /**********************************************************
 File Name: Player.cpp
+Project Name: Doom Game
 Start Date: 01/23/2018
-Mod Date: 02/20/2018
+Mod Date: 03/12/2018
 Creator Name: Davin Ross
 Contributors Name: Davin Ross
 ===========================================================
@@ -61,16 +62,31 @@ void Player::setArmor(i32 armor) {
 }
 
 void Player::setMaxArmor(i32 maxArmor) {
+
 	// Check to make sure that maxArmor exceeds 0
 	if (maxArmor > 0) {
 		_maxArmor = maxArmor; // Set new maxArmor
 	}
+
 	// If maxArmor is less than 0, set maxArmor to 100
 	else {
 		_maxArmor = 100;
 	}
 }
 
+i32 Player::addArmor(i32 addArmor) {
+
+	// Check to see if armor is less than max armor. 
+	if (_armor + addArmor < _maxArmor) {
+		_armor += addArmor; // Add armor and addArmor
+	}
+	else {
+		_armor = _maxArmor; // Set armor to max armor
+	}
+	return _armor;
+}
+
+// Player Health Functions
 void Player::setHealth(i32 health) {
 	// Check to make sure health does not exceed 100 or drop below 0
 	if (health >= 0 && health <= _maxHealth) {
@@ -93,6 +109,30 @@ void Player::setMaxHealth(i32 maxHealth) {
 	}
 }
 
+i32 Player::playerDamage(i32 damage) {
+	// Check to see if armor <= 0, and if damage is being done. 
+	if (_armor - damage <= 0) {
+		_health -= damage; // Subtract damage from health.
+	}
+	// Check to see if armor > 0
+	else if (_armor - damage > 0) {
+		_armor -= damage; // subtract damage from armor.
+
+	}
+	return _health, _armor;
+}
+
+i32 Player::addHealth(i32 addHealth) {
+	
+	// Check to see if health is less than max health.
+	if (_health + addHealth < _maxHealth) {
+		_health += addHealth; // add health and addHealth
+	}
+	else {
+		_health = _maxHealth; // Set health to max health.
+	}
+	return _health;
+}
 
 void Player::setCurWeapons(WEAPONS newWeaponsIndex) {
 	_curWeaponsIndex = newWeaponsIndex; // _curWeaponIndex does not exist in player.h

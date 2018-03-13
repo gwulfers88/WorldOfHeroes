@@ -1,12 +1,13 @@
 /**********************************************************
-File Name: Player.h
-Start Date: 01/23/2018
-Mod Date: 02/20/2018
+File Name: unittest1.cpp
+Project Name: Doom Game
+Start Date: 03/07/2018
+Mod Date: 03/12/2018
 Creator Name: Davin Ross
 Contributors Name: Davin Ross
 ===========================================================
 Description:
-This file is the header file for the Player Class
+This file is used for Unit Testing
 ===========================================================
 **********************************************************/
 #include "stdafx.h"
@@ -27,8 +28,9 @@ namespace UnitTest_Davin {
 			w.setMaxAmmo(15);
 			w.setAmmo(0);
 			w.addAmmo(9);
+			w.subtractAmmo(4);
 
-			Assert::AreEqual(9, w.getAmmo());
+			Assert::AreEqual(5, w.getAmmo());
 		}
 	};
 
@@ -41,8 +43,9 @@ namespace UnitTest_Davin {
 			w.setMaxAmmo(15);
 			w.setAmmo(0);
 			w.addAmmo(16);
+			w.subtractAmmo(5);
 
-			Assert::AreEqual(15, w.getAmmo());
+			Assert::AreEqual(10, w.getAmmo());
 		}
 	};
 
@@ -86,11 +89,14 @@ namespace UnitTest_Davin {
 
 			p.setMaxArmor();
 			p.setMaxHealth();
-			p.setHealth(100);
-			p.setArmor(100);
+			p.setHealth(50);
+			p.setArmor(0);
+			p.addHealth(25);
+			p.addArmor(0);
+			p.playerDamage(50);
 
-			Assert::AreEqual(100, p.getHealth());
-			Assert::AreEqual(100, p.getArmor());
+			Assert::AreEqual(25, p.getHealth());
+			Assert::AreEqual(0, p.getArmor());
 		}
 	};
 }

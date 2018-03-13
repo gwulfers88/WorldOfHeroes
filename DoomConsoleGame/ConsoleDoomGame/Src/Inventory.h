@@ -1,7 +1,8 @@
 /**********************************************************
 File Name: Inventory.h
+Project Name: Doom Game
 Start Date: 02/25/2018
-Mod Date: 02/27/2018
+Mod Date: 02/20/2018
 Creator Name: Davin Ross
 Contributors Name: Davin Ross
 ===========================================================

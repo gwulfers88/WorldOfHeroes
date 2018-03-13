@@ -1,7 +1,8 @@
 /**********************************************************
 File Name: Weapons.h
+Project Name: Doom Game
 Start Date: 02/20/2018
-Mod Date: 02/20/2018
+Mod Date: 03/12/2018
 Creator Name: Davin Ross
 Contributors Name: Davin Ross
 ===========================================================
@@ -27,6 +28,7 @@ public:
 	~Weapons();
 
 	i32 addAmmo(i32);
+	i32 subtractAmmo(i32);
 
 	// Setters
 	void setAmmo(i32);

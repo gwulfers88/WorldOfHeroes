@@ -1,7 +1,8 @@
 /**********************************************************
 File Name: Weapons.cpp
+Project Name: Doom Game
 Start Date: 02/20/2018
-Mod Date: 02/20/2018
+Mod Date: 03/12/2018
 Creator Name: Davin Ross
 Contributors Name: Davin Ross
 ===========================================================
@@ -17,13 +18,24 @@ Weapons::~Weapons() {}
 
 // When the player picks up ammo from the level
 i32 Weapons::addAmmo(i32 ammoPickup) {
+
+	// Check to see if amm is less than max ammo.
 	if (_ammo + ammoPickup < _maxAmmo) {
 
 		// Adds the ammo that is picked up to the current ammo
 		_ammo += ammoPickup;
 	}
 	else {
-		_ammo = _maxAmmo;
+		_ammo = _maxAmmo; // Set ammo to max ammo.
+	}
+	return _ammo;
+}
+
+i32 Weapons::subtractAmmo(i32 expendedAmmo) {
+
+	// Check to see if ammo - expended ammo is less than ammo.
+	if (_ammo - expendedAmmo < _ammo) {
+		_ammo -= expendedAmmo; // Subtract expended ammo from ammo.
 	}
 	return _ammo;
 }
