@@ -92,6 +92,21 @@ void MoveEntity(u32 entityIndex, vec2 dir, r32 deltaTime)
 
 void DemoGame::LoadContent()
 {
+	// Data from Player Class
+	playerInfo.setMaxHealth();
+	playerInfo.setMaxArmor();
+	playerInfo.setHealth(100);
+	playerInfo.setArmor(50);
+	
+	// Data from Weapons Class
+	weaponInfo.setWeaponIndex(WEAPONS::PISTOL);
+	weaponInfo.setWeaponName("Pistol\0");
+	weaponInfo.setMaxAmmo(50);
+	weaponInfo.setAmmo(50);
+
+	playerInfo.addWeaponToInventory(weaponInfo);
+	playerInfo.setCurWeapons(WEAPONS::PISTOL);
+
 	mapW = 40;
 	mapH = 20;
 
@@ -349,27 +364,40 @@ bool DemoGame::Update(float deltaTime)
 		renderer.DrawUI(hudP + bg_offset, hudDims, &hudBG);
 		if (i == 0)
 		{
-			renderer.DrawString("0", ArrayCount("0"), font, ArrayCount(font), hudP + bg_offset + Vec2(10, 0), fontDims);
+			char ammo[3];
+			itoa(playerInfo.getCurWeapons().getAmmo(), ammo, 10);
+			ammo[2] = '\0';
+			
+			renderer.DrawString(ammo, ArrayCount(ammo), font, ArrayCount(font), hudP + bg_offset + Vec2(10, 0), fontDims);
 			u32 strW = ArrayCount("ammo") * fontDims.x;
 			u32 strHalf = RoundReal32ToUInt32(strW * 0.5f);
 			renderer.DrawString("ammo", ArrayCount("ammo"), font, ArrayCount(font), hudP + text_offset, fontDims);
 		}
 		else if (i == 1)
 		{
-			renderer.DrawString("100", ArrayCount("100"), font, ArrayCount(font), hudP + bg_offset + Vec2(10, 0), fontDims);
+			char health[4];
+			itoa(playerInfo.getHealth(), health, 10);
+			health[3] = '\0';
+
+			renderer.DrawString(health, ArrayCount(health), font, ArrayCount(font), hudP + bg_offset + Vec2(10, 0), fontDims);
 			u32 strW = ArrayCount("health") * fontDims.x;
 			u32 strHalf = RoundReal32ToUInt32(strW * 0.5f);
 			renderer.DrawString("health", ArrayCount("health"), font, ArrayCount(font), hudP + text_offset, fontDims);
 		}
 		else if (i == 2)
 		{
+			renderer.DrawString(playerInfo.getCurWeapons().getWeaponName(), strlen(playerInfo.getCurWeapons().getWeaponName()), font, ArrayCount(font), hudP + bg_offset + Vec2(10, 0), fontDims);
 			u32 strW = ArrayCount("arms") * fontDims.x;
 			u32 strHalf = RoundReal32ToUInt32(strW * 0.5f);
 			renderer.DrawString("arms", ArrayCount("arms"), font, ArrayCount(font), hudP + text_offset, fontDims);
 		}
 		else if (i == 4)
 		{
-			renderer.DrawString("100", ArrayCount("100"), font, ArrayCount(font), hudP + bg_offset + Vec2(10, 0), fontDims);
+			char armor[4];
+			itoa(playerInfo.getArmor(), armor, 10);
+			armor[3] = '\0';
+
+			renderer.DrawString(armor, ArrayCount(armor), font, ArrayCount(font), hudP + bg_offset + Vec2(10, 0), fontDims);
 			u32 strW = ArrayCount("armor") * fontDims.x;
 			u32 strHalf = RoundReal32ToUInt32(strW * 0.5f);
 			renderer.DrawString("armor", ArrayCount("armor"), font, ArrayCount(font), hudP + text_offset, fontDims);

@@ -11,6 +11,7 @@ This file is the source file for the Weapons Class
 ===========================================================
 **********************************************************/
 #include "Weapons.h"
+#include "Memory.h"
 
 Weapons::Weapons() {}
 
@@ -42,19 +43,16 @@ i32 Weapons::subtractAmmo(i32 expendedAmmo) {
 
 // Setter Functions
 void Weapons::setAmmo(i32 ammo) {
-	if (ammo <= 0) {
+	if (ammo < _maxAmmo) {
 
 		// Makes Sure to Add Ammo to Weapons That Use Ammo
 		if (_weaponIndex != FIST) {
 			_ammo = ammo; // Set New Ammo
-
-			// Makes Sure That Ammo Does Not Exceed Max Ammo
-			if (_ammo > _maxAmmo) {
-
-				// If Ammo Does Exceed MaxAmmo, Set Ammo to Max Ammo
-				_ammo = _maxAmmo;
-			}
 		}
+	} 
+	else {
+		// If Ammo Does Exceed MaxAmmo, Set Ammo to Max Ammo
+		_ammo = _maxAmmo;
 	}
 }
 
@@ -68,6 +66,15 @@ void Weapons::setWeaponIndex(WEAPONS w) {
 	_weaponIndex = w;
 }
 
+void Weapons::setWeaponName(i8* wn) {
+	if (_weaponIndex != NONE) {
+		i32 strSize = strlen(wn) + 1;
+		weaponName = CreateArray(Memory::GetPersistantHandle(), i8, strSize);
+		strcpy(weaponName, wn);
+		weaponName[strSize - 1] = '\0';
+	}
+}
+
 // Getter Functions
 WEAPONS Weapons::getWeaponIndex() const {
 	return _weaponIndex;
@@ -79,6 +86,9 @@ i32 Weapons::getAmmo() const {
 
 i32 Weapons::getMaxAmmo() const {
 	return _maxAmmo;
+}
+i8* Weapons::getWeaponName() const {
+	return weaponName;
 }
 
 
