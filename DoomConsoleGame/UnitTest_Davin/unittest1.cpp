@@ -89,13 +89,13 @@ namespace UnitTest_Davin {
 
 			p.setMaxArmor();
 			p.setMaxHealth();
-			p.setHealth(50);
-			p.setArmor(0);
-			p.addHealth(25);
+			p.setHealth(100);
+			p.setArmor(50);
+			p.addHealth(0);
 			p.addArmor(0);
-			p.playerDamage(50);
+			p.playerDamage(75);
 
-			Assert::AreEqual(25, p.getHealth());
+			Assert::AreEqual(75, p.getHealth());
 			Assert::AreEqual(0, p.getArmor());
 		}
 	};

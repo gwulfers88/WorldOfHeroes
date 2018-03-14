@@ -11,17 +11,31 @@ This file is the header file for the Inventory Class
 ===========================================================
 **********************************************************/
 #include "platform.h"
-#include "Player.h"
 
 #ifndef INVENTORY_H
 #define INVENTORY_H
-
+/*
+enum KEYS {
+	RED = 0,
+	BLUE,
+	GREEN
+};
+*/
 class Inventory {
 public:
 	Inventory();
 	~Inventory();
 
+	// Setters
+	//void setDoorKeyIndex(KEYS);
+
+	// Getters
+	//KEYS getDoorKeyIndex() const;
+
 private:
+	
+	//KEYS _doorKeyIndex;
+
 };
 #endif
 

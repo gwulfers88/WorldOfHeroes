@@ -110,14 +110,23 @@ void Player::setMaxHealth(i32 maxHealth) {
 }
 
 i32 Player::playerDamage(i32 damage) {
+	i32 leftoverDamage = _armor - damage;
+	if (leftoverDamage <= 0) {
+		damage -= leftoverDamage*-1;
+		_health -= leftoverDamage*-1;
+	}
 	// Check to see if armor <= 0, and if damage is being done. 
-	if (_armor - damage <= 0) {
-		_health -= damage; // Subtract damage from health.
+	if (_armor - damage >= 0 && _armor > 0) {
+		_armor -= damage; // Subtract damage from health.
+
+		if (_armor < 0) {
+			leftoverDamage = _armor * -1;
+			_health -= leftoverDamage;
+		}
 	}
 	// Check to see if armor > 0
-	else if (_armor - damage > 0) {
-		_armor -= damage; // subtract damage from armor.
-
+	else {
+		_health -= damage; // subtract damage from armor.
 	}
 	return _health, _armor;
 }

@@ -15,6 +15,7 @@ Description:
 
 #include "platform.h"
 #include "Weapons.h"
+#include "Inventory.h"
 
 class Player {
 public:
@@ -63,5 +64,9 @@ private:
 	WEAPONS _curWeaponsIndex; // Curent Index
 	i32 _maxWeapons; // Max Number of Weapons
 	Weapons _weapons[2]; // Weapons Array
+
+	// Door Keys
+	//Inventory _doorKeys[3];
+
 };
 #endif

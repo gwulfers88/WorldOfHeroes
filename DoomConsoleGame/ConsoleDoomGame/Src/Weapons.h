@@ -21,7 +21,6 @@ enum WEAPONS {
 	PISTOL
 };
 
-
 class Weapons {
 public:
 	Weapons();
