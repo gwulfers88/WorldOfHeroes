@@ -1,70 +1,93 @@
 #include "DemoGame.h"
 #include "platform.h"
 #include "File.h"
+#include "Entity.h"
 
-enum EntityType
-{
-	Entity_None,
-	Entity_Player,
-	Entity_Pillar,
-	Entity_Wall,
-	Entity_Door,
-};
-
-struct Entity
-{
-	vec2 position;
-	vec2 dims;
-	vec2 forward;
-	r32 rotation;
-	u32 TexIndex;
-	EntityType type;
-};
+u32 EntityManager::entityCount = 0;
+Entity EntityManager::entities[4096] = {};
 
 Entity* player = 0;
 u32 playerIndex = 0;
 
-Entity entities[4096] = {};
-u32 entityCount = 0;
-
-u32 AddEntity(EntityType type)
-{
-	u32 MaxCount = ArrayCount(entities);
-	Assert((entityCount + 1 < MaxCount));
-	u32 EntityIndex = entityCount++;
-
-	Entity* entity = entities + EntityIndex;
-	entity->type = type;
-
-	return EntityIndex;
-}
-
-Entity* GetEntity(u32 EntityIndex)
-{
-	Assert((EntityIndex < ArrayCount(entities)));
-	Entity* result = entities + EntityIndex;
-	return result;
-}
-
 u32 AddPlayer(vec2 pos)
 {
-	u32 Index = AddEntity(Entity_Player);
-	Entity* player = GetEntity(Index);
+	pos += Vec2(0.5f, 0.5f);
+	u32 Index = EntityManager::AddEntity(Entity_Player);
+	Entity* player = EntityManager::GetEntity(Index);
 	player->position = pos;
-	player->rotation = 1.0f;
-	player->dims = Vec2(0.5f, 0.5f);
+	player->rotation = 2.0f;
+	player->dims = Vec2(0.1f, 0.1f);
+	player->speed = 10.0f;
 	player->TexIndex = -1;
+
+	return Index;
+}
+
+u32 AddEnemy(vec2 pos)
+{
+	pos += Vec2(0.5f, 0.5f);
+	u32 Index = EntityManager::AddEntity(Entity_Enemy);
+	Entity* enemy = EntityManager::GetEntity(Index);
+	enemy->position = pos;
+	enemy->rotation = 2.0f;
+	enemy->dims = Vec2(0.1f, 0.1f);
+	enemy->speed = 5.0f;
+	enemy->TexIndex = -1;
 
 	return Index;
 }
 
 void AddPillar(vec2 pos)
 {
-	u32 Index = AddEntity(Entity_Pillar);
-	Entity* entity = GetEntity(Index);
+	pos += Vec2(0.5f, 0.5f);
+	u32 Index = EntityManager::AddEntity(Entity_Pillar);
+	Entity* entity = EntityManager::GetEntity(Index);
 	entity->position = pos;
 	entity->dims = Vec2(0.25f, 0.25f);
 	entity->TexIndex = -1;
+}
+
+void AddWall(vec2 pos)
+{
+	pos += Vec2(0.5f, 0.5f);
+	u32 Index = EntityManager::AddEntity(Entity_Wall);
+	Entity* entity = EntityManager::GetEntity(Index);
+	entity->position = pos;
+	entity->dims = Vec2(0.8f, 0.8f);
+	entity->TexIndex = -1;
+}
+
+void MoveEntity(u32 entityIndex, vec2 dir, r32 deltaTime)
+{
+	// Calculate the right vector based on the Up and the Forward Vector of the player
+	Entity* entity = EntityManager::GetEntity(entityIndex);
+	vec3 up = Vec3(0, 0, 1);
+	vec3 right = Cross(Vec3(entity->forward, 0), up);
+	entity->position += ((entity->forward * dir.x) + (right.xy * dir.y)) * entity->speed * deltaTime;
+
+	// Physics Simulation
+	// Collision between the world (WALLS) and the player
+	// Below is collision between pillar obj and the player
+	for (u32 testIndex = 1; testIndex < EntityManager::EntityCount(); ++testIndex)
+	{
+		if (testIndex != entityIndex)
+		{
+			Entity* testEntity = EntityManager::GetEntity(testIndex);
+
+			vec2 minP = testEntity->position - (testEntity->dims + entity->dims);
+			vec2 maxP = testEntity->position + (testEntity->dims + entity->dims);
+
+			if (entity->position.x > minP.x &&
+				entity->position.x < maxP.x &&
+				entity->position.y > minP.y &&
+				entity->position.y < maxP.y /*||
+											map[(int)player->position.y * mapW + (int)player->position.x] == L'#'*/)
+			{
+				// Collision
+				entity->position -= ((entity->forward * dir.x) + (right.xy * dir.y)) * entity->speed * deltaTime;
+			}
+		}
+	}
 }
 
 void DemoGame::LoadContent()
@@ -74,25 +97,25 @@ void DemoGame::LoadContent()
 
 	map =
 	{
-		L"########################################"
-		L"#..........D.....D.....................#"
-		L"#.........P#######P....................#"
-		L"#..........#.....#........P...P........#"
-		L"#......S...#.....#...######...######...#"
-		L"############.....#...#....P...P....#...#"
+		L".................#######################"
+		L".................#................E....#"
+		L".................#..................E..#"
+		L".................#........P...P........#"
+		L".................#...######...######...#"
+		L".................#...#....P...P....#...#"
 		L".................#...#.............#...#"
-		L".................#...############..#...#"
-		L".................#...#.............#...#"
-		L".................D...#.............#...#"
-		L".................D...#..############...#"
-		L".................#...#.............#...#"
+		L"############.....#...############..#...#"
+		L"#.........P#######P..#.............#...#"
+		L"#....S...............#.............#...#"
+		L"#.........P#######P..#..############...#"
+		L"############.....#...#.............#...#"
 		L".................#...#.............#...#"
 		L".................#...############..#...#"
 		L".................#...#.............#...#"
 		L".................#...#..P.P........#...#"
 		L".................#...####D##########...#"
 		L".................#......P.P............#"
-		L".................#.....................#"
+		L".................#..E..................#"
 		L".................#######################"
 	};
 
@@ -128,6 +151,8 @@ void DemoGame::LoadContent()
 	hudDims = Vec2((r32)w, 20);
 	hudP = Vec2(0, (r32)renderer.GetRenderBuffers()->Height - hudDims.y);
 
+	EntityManager::AddEntity(Entity_None);	// Null Entity
+
 	// Setup player
 	for (int y = 0; y < mapH; ++y)
 	{
@@ -137,14 +162,24 @@ void DemoGame::LoadContent()
 			if (token == 'S')
 			{
 				playerIndex = AddPlayer(Vec2(x, y));
-				player = GetEntity(playerIndex);
+				player = EntityManager::GetEntity(playerIndex);
 			}
 			else if (token == 'P')
 			{
 				AddPillar(Vec2(x, y));
 			}
+			else if (token == '#')
+			{
+				AddWall(Vec2(x, y));
+			}
+			else if (token == 'E')
+			{
+				AddEnemy(Vec2(x, y));
+			}
 		}
 	}
+
+	renderer.BuildWorldHash();
 }
 
 bool DemoGame::Update(float deltaTime)
@@ -153,7 +188,6 @@ bool DemoGame::Update(float deltaTime)
 	if (GetAsyncKeyState(VK_ESCAPE) & 0x8000)
 		Quit = true;
 
-	float playerSpeed = 10.0f;
 	vec2 direction = {}; // X: Fwd/Bkwd, Y: StrafeL, StrafeR
 
 	if (Controller)
@@ -171,11 +205,11 @@ bool DemoGame::Update(float deltaTime)
 		// Roatting the Angle CCW / CW
 		if (Controller->MoveLeft.pressed)
 		{
-			player->rotation -= (playerSpeed * 0.75f) * deltaTime;
+			player->rotation -= (player->speed * 0.75f) * deltaTime;
 		}
 		else if (Controller->MoveRight.pressed)
 		{
-			player->rotation += (playerSpeed * 0.75f) * deltaTime;
+			player->rotation += (player->speed * 0.75f) * deltaTime;
 		}
 
 		player->forward = Normalize(Vec2(sinf(player->rotation), cosf(player->rotation)));
@@ -191,35 +225,32 @@ bool DemoGame::Update(float deltaTime)
 		}
 	}
 
-	// Calculate the right vector based on the Up and the Forward Vector of the player
-	vec3 up = Vec3(0, 0, 1);
-	vec3 right = Cross(Vec3(player->forward, 0), up);
-	player->position += ((player->forward * direction.x) + (right.xy * direction.y)) * playerSpeed * deltaTime;
-	
-	// Physics Simulation
-	// Collision between the world (WALLS) and the player
-	// Below is collision between pillar obj and the player
-	for (u32 entityIndex = 1; entityIndex < entityCount; ++entityIndex)
+	MoveEntity(playerIndex, direction, deltaTime);
+
+	for (u32 entityIndex = 1; entityIndex < EntityManager::EntityCount(); ++entityIndex)
 	{
 		if (entityIndex != playerIndex)
 		{
-			Entity* testEntity = GetEntity(entityIndex);
+			Entity* entity = EntityManager::GetEntity(entityIndex);
 
-			vec2 minP = testEntity->position - (testEntity->dims + player->dims);
-			vec2 maxP = testEntity->position + (testEntity->dims + player->dims);
-
-			if (player->position.x > minP.x &&
-				player->position.x < maxP.x &&
-				player->position.y > minP.y &&
-				player->position.y < maxP.y ||
-				map[(int)player->position.y * mapW + (int)player->position.x] == L'#')
+			switch (entity->type)
 			{
-				// Collision
-				player->position -= ((player->forward * direction.x) + (right.xy * direction.y)) * playerSpeed * deltaTime;
+			case Entity_Enemy:
+			{
+				vec2 dir = player->position - entity->position;
+				r32 dist = Length(dir);
+				if (dist < 10.0f && dist >= 2.0f)
+				{
+					entity->forward = Normalize(dir);
+					r32 angle = Dot(entity->forward, player->forward);
+					if(angle >= -1.0f)
+						MoveEntity(entityIndex, Vec2(1, 0), deltaTime);
+				}
+			}break;
+			default: {}
 			}
 		}
 	}
-
 	// Clear buffer to certain color
 	renderer.ClearBuffer(PIXEL_COLOR_GREY);
 
@@ -232,11 +263,11 @@ bool DemoGame::Update(float deltaTime)
 	// Projecting 2D to 3D world
 	renderer.ProjectWorld(&camera, map, mapW, mapH, &wall);
 
-	for (u32 entityIndex = 1; entityIndex < entityCount; ++entityIndex)
+	for (u32 entityIndex = 1; entityIndex < EntityManager::EntityCount(); ++entityIndex)
 	{
 		if (entityIndex != playerIndex)
 		{
-			Entity* entity = GetEntity(entityIndex);
+			Entity* entity = EntityManager::GetEntity(entityIndex);
 
 			switch (entity->type)
 			{
@@ -244,7 +275,10 @@ bool DemoGame::Update(float deltaTime)
 			{
 				renderer.ProjectObject(&camera, entity->position, &pillar);
 			}break;
-
+			case Entity_Enemy:
+			{
+				renderer.ProjectObject(&camera, entity->position, &wall);
+			}break;
 			default: {}
 			}
 		}
@@ -286,11 +320,11 @@ bool DemoGame::Update(float deltaTime)
 	renderer.DrawPixel(player->position + screenOnePos, PIXEL_SOLID, PIXEL_COLOR_LIGHT_GREEN);
 
 	// Draw Pillars
-	for (u32 entityIndex = 1; entityIndex < entityCount; ++entityIndex)
+	for (u32 entityIndex = 1; entityIndex < EntityManager::EntityCount(); ++entityIndex)
 	{
 		if (entityIndex != playerIndex)
 		{
-			Entity* entity = GetEntity(entityIndex);
+			Entity* entity = EntityManager::GetEntity(entityIndex);
 
 			switch (entity->type)
 			{
@@ -298,7 +332,10 @@ bool DemoGame::Update(float deltaTime)
 			{
 				renderer.DrawPixel(entity->position + screenOnePos, PIXEL_SEMI_DARK, PIXEL_COLOR_LIGHT_RED);
 			}break;
-
+			case Entity_Enemy:
+			{
+				renderer.DrawPixel(entity->position + screenOnePos, PIXEL_SEMI_DARK, PIXEL_COLOR_LIGHT_GREEN);
+			}break;
 			default: {}
 			}
 		}

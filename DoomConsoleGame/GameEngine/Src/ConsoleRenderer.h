@@ -15,6 +15,7 @@ render the current game
 #include "platform.h"
 #include "Sprite.h"
 #include "vec2.h"
+#include "Entity.h"
 
 #pragma pack(push, 16)
 struct ScreenBuffer
@@ -67,6 +68,10 @@ public:
 	~ConsoleRenderer();
 	
 	ScreenBuffer* GetRenderBuffers();
+
+	// This function will build the world hash map.
+	void BuildWorldHash();
+
 	void SetScreenBuffer(ScreenBuffer *_screen);
 	// Draws a single pixel onto the screen buffer using the desired x, y position, type of pixel and color.
 	void DrawPixel(vec2 pos, wchar_t pixel = PIXEL_SOLID, u16 color = PIXEL_COLOR_WHITE);
@@ -89,7 +94,16 @@ public:
 	void PresentBuffer();
 
 protected:
+	// Adds entity to hash
+	void AddEntityToHash(Entity* entity);
+	// gets entity from hash
+	Entity* GetEntityFromHash(vec2 pos);
+	// hash function generation
+	u32 HashFunction(vec2 pos);
+
 	ScreenBuffer *screen;
+	Entity* worldHash;
+	u32 worldHashCount;
 
 };
 

@@ -1,9 +1,60 @@
 #include "ConsoleRenderer.h"
+#include "memory.h"
 
 ConsoleRenderer::ConsoleRenderer() {}
 ConsoleRenderer::~ConsoleRenderer() {}
 
 ScreenBuffer* ConsoleRenderer::GetRenderBuffers() { return screen; }
+
+// This function will build the world hash map.
+void ConsoleRenderer::BuildWorldHash()
+{
+	u32 totalHashCount = EntityManager::EntityCount() * 2;
+	worldHash = CreateArray(Memory::GetPersistantHandle(), Entity, totalHashCount);
+
+	worldHashCount = totalHashCount;
+
+	// Loop through all of the entities and add them to the hash table (ONLY THINGS THAT DONT MOVE!!!)
+	for (u32 EntityIndex = 0; EntityIndex < EntityManager::EntityCount(); EntityIndex++)
+	{
+		Entity* entity = EntityManager::GetEntity(EntityIndex);
+		if (entity->type == Entity_Wall || entity->type == Entity_Pillar)
+		{
+			AddEntityToHash(entity);
+		}
+	}
+}
+
+void ConsoleRenderer::AddEntityToHash(Entity* entity)
+{
+	u32 Hash = HashFunction(entity->position);
+	Entity* EntitySlot = worldHash + Hash;
+	while (EntitySlot->type != 0)
+	{
+		Hash++;
+		Hash = Hash % worldHashCount;
+		EntitySlot = worldHash + Hash;
+	}
+	worldHash[Hash] = *entity;
+}
+
+Entity* ConsoleRenderer::GetEntityFromHash(vec2 pos)
+{
+	u32 Hash = HashFunction(pos);
+	Entity* entity = worldHash + Hash;
+	return entity;
+}
+
+u32 ConsoleRenderer::HashFunction(vec2 pos)
+{
+	u32 x = RoundReal32ToUInt32(pos.x);
+	u32 y = RoundReal32ToUInt32(pos.y);
+
+	u32 bit = ((x << 0) | (y << 16));
+	
+	u32 Hash = bit % worldHashCount;
+	return Hash;
+}
 
 void ConsoleRenderer::SetScreenBuffer(ScreenBuffer *_screen)
 {
@@ -153,14 +204,14 @@ void ConsoleRenderer::ProjectObject(Camera* camera, vec2 objP, Sprite* img)
 void ConsoleRenderer::ProjectWorld(Camera* camera, wchar_t* Map, u32 MapW, u32 MapH, Sprite* wall)
 {
 	// TODO: Should we pass the textures for the wall through???
-	
+	// TODO: Figure out how to not have collisions when adding into hash
 	for (int x = 0; x < screen->Width; ++x)
 	{
 		// Find the ray angle based on the players Rotattion angle
 		//float RayAngle = (playerAngle - FOV / 2) + ((float)x / screenWidth) * FOV;
 		float RayAngle = (camera->rotation - camera->FOV / 2) + ((float)x / screen->Width) * camera->FOV;
 
-		float StepSize = 0.01f;			// This is how far we will advanced the ray per iteration
+		float StepSize = 0.1f;			// This is how far we will advanced the ray per iteration
 		float DistanceToWall = 0.0f;	// 
 
 		bool HitWall = false;
@@ -178,8 +229,8 @@ void ConsoleRenderer::ProjectWorld(Camera* camera, wchar_t* Map, u32 MapW, u32 M
 		{
 			DistanceToWall += StepSize;
 
-			i32 TestX = (camera->Position.x + eye.x * DistanceToWall);
-			i32 TestY = (camera->Position.y + eye.y * DistanceToWall);
+			r32 TestX = (camera->Position.x + eye.x * DistanceToWall);
+			r32 TestY = (camera->Position.y + eye.y * DistanceToWall);
 
 			vec2 deltaP = camera->Position + eye * DistanceToWall;
 
@@ -200,7 +251,7 @@ void ConsoleRenderer::ProjectWorld(Camera* camera, wchar_t* Map, u32 MapW, u32 M
 					// Calculate the Texture coordinates here.
 					Color = PIXEL_COLOR_DARK_CYAN;
 
-					vec2 wallMidP = Vec2((r32)TestX + 0.5f, (r32)TestY + 0.5f);
+					vec2 wallMidP = Vec2(((u32)TestX) + 0.5f, ((u32)TestY) + 0.5f);
 					vec2 testP = camera->Position + eye * DistanceToWall;
 					float testAngle = atan2f(testP.y - wallMidP.y, testP.x - wallMidP.x);
 
@@ -216,7 +267,7 @@ void ConsoleRenderer::ProjectWorld(Camera* camera, wchar_t* Map, u32 MapW, u32 M
 				// Ray is still in bounds to test cell for Doors
 				else if (Map[(i32)TestY * MapW + (i32)TestX] == L'D')
 				{
-					vec2 doorMidP = Vec2((r32)TestX + 0.5f, (r32)TestY + 0.5f);
+					vec2 doorMidP = Vec2(((u32)TestX) + 0.5f, ((u32)TestY) + 0.5f);
 
 					if (deltaP.x > doorMidP.x - 0.05f && deltaP.x < doorMidP.x + 0.05f)
 					{
