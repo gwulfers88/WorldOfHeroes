@@ -90,7 +90,9 @@ void MoveEntity(u32 entityIndex, vec2 dir, r32 deltaTime)
 	}
 }
 
-void MoveEnemy(u32 entityIndex, u32 targetIndex, r32 deltaTime)
+global_variable r32 timer = 0;
+
+void MoveEnemy(u32 entityIndex, u32 targetIndex, Player* playerInfo, r32 deltaTime)
 {
 	// Calculate the right vector based on the Up and the Forward Vector of the player
 	Entity* entity = EntityManager::GetEntity(entityIndex);
@@ -114,7 +116,15 @@ void MoveEnemy(u32 entityIndex, u32 targetIndex, r32 deltaTime)
 		else if (distance >= 2.0f && distance < 5.0f)
 		{
 			//Attack
-
+			r32 delay = 3.0f;
+			timer += deltaTime;
+			if (timer >= delay)
+			{
+				if (target->type == EntityType::Entity_Player)
+				{
+					playerInfo.
+				}
+			}
 		}
 		else
 		{
