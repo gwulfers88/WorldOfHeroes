@@ -1,7 +1,8 @@
 /**********************************************************
 File Name: Weapons.cpp
+Project Name: Doom Game
 Start Date: 02/20/2018
-Mod Date: 02/20/2018
+Mod Date: 03/12/2018
 Creator Name: Davin Ross
 Contributors Name: Davin Ross
 ===========================================================
@@ -10,52 +11,84 @@ This file is the source file for the Weapons Class
 ===========================================================
 **********************************************************/
 #include "Weapons.h"
+#include "Memory.h"
 
 Weapons::Weapons() {}
 
 Weapons::~Weapons() {}
 
 // When the player picks up ammo from the level
-i32 Weapons::addAmmo(i32 ammo) {
-	if (_ammo < _maxAmmo) {
+i32 Weapons::addAmmo(i32 ammoPickup) {
+
+	// Check to see if amm is less than max ammo.
+	if (_ammo + ammoPickup < _maxAmmo) {
 
 		// Adds the ammo that is picked up to the current ammo
-		_ammo += _ammoPickup = _ammo;
-		if (_ammo >= _maxAmmo) {
-
-			// If the current ammo exceeds the maximum allowed ammo, set the current ammo to the max ammo.
-			_ammo = _maxAmmo;
-		}
+		_ammo += ammoPickup;
+	}
+	else {
+		_ammo = _maxAmmo; // Set ammo to max ammo.
 	}
 	return _ammo;
 }
 
+i32 Weapons::subtractAmmo(i32 expendedAmmo) {
+
+	// Check to see if ammo - expended ammo is less than ammo.
+	if (_ammo - expendedAmmo < _ammo) {
+		_ammo -= expendedAmmo; // Subtract expended ammo from ammo.
+	}
+	return _ammo;
+}
 
 // Setter Functions
 void Weapons::setAmmo(i32 ammo) {
-	if (_ammo <= 0) {
+	if (ammo < _maxAmmo) {
 
 		// Makes Sure to Add Ammo to Weapons That Use Ammo
 		if (_weaponIndex != FIST) {
 			_ammo = ammo; // Set New Ammo
-
-			// Makes Sure That Ammo Does Not Exceed Max Ammo
-			if (_ammo > _maxAmmo) {
-
-				// If Ammo Does Exceed MaxAmmo, Set Ammo to Max Ammo
-				_ammo = _maxAmmo;
-			}
 		}
+	} 
+	else {
+		// If Ammo Does Exceed MaxAmmo, Set Ammo to Max Ammo
+		_ammo = _maxAmmo;
+	}
+}
+
+void Weapons::setMaxAmmo(i32 maxAmmo) {
+	if (_weaponIndex != FIST) {
+		_maxAmmo = maxAmmo;
+	}
+}
+
+void Weapons::setWeaponIndex(WEAPONS w) {
+	_weaponIndex = w;
+}
+
+void Weapons::setWeaponName(i8* wn) {
+	if (_weaponIndex != NONE) {
+		i32 strSize = strlen(wn) + 1;
+		weaponName = CreateArray(Memory::GetPersistantHandle(), i8, strSize);
+		strcpy(weaponName, wn);
+		weaponName[strSize - 1] = '\0';
 	}
 }
 
 // Getter Functions
+WEAPONS Weapons::getWeaponIndex() const {
+	return _weaponIndex;
+}
+
 i32 Weapons::getAmmo() const {
 	return _ammo;
 }
 
 i32 Weapons::getMaxAmmo() const {
 	return _maxAmmo;
+}
+i8* Weapons::getWeaponName() const {
+	return weaponName;
 }
 
 

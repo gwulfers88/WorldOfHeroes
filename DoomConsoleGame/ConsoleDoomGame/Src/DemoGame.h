@@ -1,5 +1,6 @@
 /*******************************************************
 FileName: DemoGame.h
+Project Name: Doom Game
 StartDate: 01/20/2018
 ModDate: 02/27/2018
 CreatorName: George Wulfers
@@ -13,6 +14,7 @@ All of the code for the game will be held here within this class.
 #include "BaseGame.h"
 #include "Sprite.h"
 #include "vec3.h"
+#include "Player.h"
 
 class DemoGame : public BaseGame
 {
@@ -35,6 +37,9 @@ protected:
 
 	vec2 hudP;
 	vec2 hudDims;
+
+	Player playerInfo;
+	Weapons weaponInfo;
 
 	Sprite font[36];
 	vec2 fontDims;
