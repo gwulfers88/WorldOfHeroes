@@ -90,6 +90,47 @@ void MoveEntity(u32 entityIndex, vec2 dir, r32 deltaTime)
 	}
 }
 
+void MoveEnemy(u32 entityIndex, u32 targetIndex, r32 deltaTime)
+{
+	// Calculate the right vector based on the Up and the Forward Vector of the player
+	Entity* entity = EntityManager::GetEntity(entityIndex);
+	Entity* target = EntityManager::GetEntity(targetIndex);
+
+	r32 distance = Length(target->position - entity->position);
+	vec2 direction = {};
+	if (distance < 10.0f && distance >= 2.0f)
+	{
+		if (distance >= 5.0f) // Approach target
+		{
+			entity->forward = Normalize(target->position - entity->position);
+			r32 angle = Dot(entity->forward, player->forward);
+			if (angle <= -0.9f || angle >= 0.0f)
+			{
+				direction.x = 1;
+			}
+			// Move entity
+			MoveEntity(entityIndex, direction, deltaTime);
+		}
+		else if (distance >= 2.0f && distance < 5.0f)
+		{
+			//Attack
+
+		}
+		else
+		{
+			// Backup
+			entity->forward = Normalize(target->position - entity->position);
+			r32 angle = Dot(entity->forward, player->forward);
+			if (angle <= -0.9f || angle >= 0.0f)
+			{
+				direction.x = -1;
+			}
+			// Move entity
+			MoveEntity(entityIndex, direction, deltaTime);
+		}
+	}
+}
+
 void DemoGame::LoadContent()
 {
 	mapW = 40;
@@ -237,20 +278,13 @@ bool DemoGame::Update(float deltaTime)
 			{
 			case Entity_Enemy:
 			{
-				vec2 dir = player->position - entity->position;
-				r32 dist = Length(dir);
-				if (dist < 10.0f && dist >= 2.0f)
-				{
-					entity->forward = Normalize(dir);
-					r32 angle = Dot(entity->forward, player->forward);
-					if(angle >= -1.0f)
-						MoveEntity(entityIndex, Vec2(1, 0), deltaTime);
-				}
+				MoveEnemy(entityIndex, playerIndex, deltaTime);
 			}break;
 			default: {}
 			}
 		}
 	}
+
 	// Clear buffer to certain color
 	renderer.ClearBuffer(PIXEL_COLOR_GREY);
 
