@@ -13,6 +13,7 @@ enum Tags
 	Tag_Wall,
 	Tag_Pillar,
 	Tag_PistolAmo,
+	Tag_ArmorPickup,
 };
 
 u32 AddPlayer(vec2 pos)
@@ -79,6 +80,17 @@ void AddPistolAmmo(vec2 pos)
 	u32 Index = EntityManager::EntityCount();
 	GameObject* gameObject = CreateObject(Memory::GetPersistantHandle(), GameObject);
 	gameObject->SetTag(Tag_PistolAmo);
+	gameObject->SetPosition(pos);
+	gameObject->SetDimensions(Vec2(0.5f, 0.5f));
+	EntityManager::AddEntity(gameObject);
+}
+
+void AddArmorPickup(vec2 pos)
+{
+	pos += Vec2(0.5f, 0.5f);
+	u32 Index = EntityManager::EntityCount();
+	GameObject* gameObject = CreateObject(Memory::GetPersistantHandle(), GameObject);
+	gameObject->SetTag(Tag_ArmorPickup);
 	gameObject->SetPosition(pos);
 	gameObject->SetDimensions(Vec2(0.5f, 0.5f));
 	EntityManager::AddEntity(gameObject);
@@ -245,32 +257,32 @@ void DemoGame::LoadContent()
 		L".................#........P...P........#.................#........P...P........#"
 		L".................#...######...######...#.................#...######...######...#"
 		L".................#...#....P...P....#...#.................#...#....P...P....#...#"
-		L".................#...#.............#...#.................#...#.............#...#"
-		L"############.....#...############..#...#############.....#...############..#...#"
-		L"#.........P#######P..#.............#...##..A......P#######P....................#"
-		L"#....S...............#.............#...........................................#"
-		L"#.........P#######P..#..############...##..A......P#######P..#..############...#"
-		L"############.....#...#.............#...#############.....#...#.............#...#"
-		L".................#...#.............#...#.................#...#.............#...#"
+		L"############.....#...#.............#...#.................#...#.............#...#"
+		L"#A........P#######P..############..#...############......#...############..#...#"
+		L"#A...................#.............#...#.....AR..P########.....................#"
+		L"#R...S...............#.............#...........................................#"
+		L"#R........P#######P..#..############.........................#..############...#"
+		L"############.....#...#.............#...#.....AR..P########...#.............#...#"
+		L".................#...#.............#...############......#...#.............#...#"
 		L".................#...############..#...#.................#...############..#...#"
 		L".................#...#.............#...#.................#...#.............#...#"
 		L".................#...#..P.P........#...#.................#...#..P.P........#...#"
 		L".................#...####D##########...#.................#...####D##########...#"
 		L".................#......P.P............#.................#......P.P............#"
 		L".................#..E..................#.................#..E..................#"
-		L".................###..#############..###.................###..###########..#####"
-		L".................###..#############..###.................###..###########..#####"
+		L".................#....##################.................###..###########..#####"
+		L".................#.....................#.................#.....................#"
 		L".................#................E....#.................#................E....#"
 		L".................#..................E..#.................#..................E..#"
 		L".................#........P...P........#.................#........P...P........#"
 		L".................#...######...######...#.................#...######...######...#"
 		L".................#...#....P...P....#...#.................#...#....P...P....#...#"
-		L".................#...#.............#...#.................#...#.............#...#"
-		L"############.....#...############..#...#############.....#...############..#...#"
-		L"#.........P#######P..#............................P#######P....................#"
+		L"############.....#...#.............#...############......#...#.............#...#"
+		L"#.........P#######...############..#...#.....AAA.P########...############..#...#"
+		L"#.................P..#....................................P....................#"
 		L"#....................#.........................................................#"
-		L"#.........P#######P..#..############...##.....AA..P#######P..#..############...#"
-		L"############.....#...#.............#...#############.....#...#.............#...#"
+		L"#.........P#######P..#..############...#.....RRR.P#######.P..#..############...#"
+		L"############.....#...#.............#...############......#...#.............#...#"
 		L".................#...#.............#...#.................#...#.............#...#"
 		L".................#...############..#...#.................#...############..#...#"
 		L".................#...#.............#...#.................#...#.............#...#"
@@ -315,6 +327,7 @@ void DemoGame::LoadContent()
 
 	// Load the ammo pickup
 	LoadSprite("data/pickups/ammo_pickup_01.sprt", &ammoPickup);
+	LoadSprite("data/pickups/armor_pickup_01.sprt", &armorPickup);
 
 	// Setup player
 	for (int y = 0; y < mapH; ++y)
@@ -346,6 +359,10 @@ void DemoGame::LoadContent()
 			else if (token == 'A')
 			{
 				AddPistolAmmo(Vec2(x, y));
+			}
+			else if (token == 'R')
+			{
+				AddArmorPickup(Vec2(x, y));
 			}
 		}
 	}
@@ -382,21 +399,42 @@ void DemoGame::HandleCollision(r32 deltaTime, GameObject* gameObject)
 			if(Intersects(gameObject->GetPosition(), minP, maxP))
 			{
 				// Collision
-				if (!testObject->CompareTag(Tag_PistolAmo))
+				if (!testObject->CompareTag(Tag_PistolAmo) && !testObject->CompareTag(Tag_ArmorPickup))
 				{
 					gameObject->Move(-gameObject->dir, deltaTime);
 					break;
 				}
-				else
+				else 
 				{
-					if (gameObject->CompareTag(Tag_Player))
+					if (testObject->CompareTag(Tag_PistolAmo))
 					{
-						Player* player = (Player*)gameObject;
-						weapons[player->getCurWeapons()].addAmmo(20);
-						EntityManager::RemoveEntity(testIndex);
-						break;
+						if (gameObject->CompareTag(Tag_Player))
+						{
+							Player* player = (Player*)gameObject;
+							Weapons* weapon = weapons + player->getCurWeapons();
+							if (weapon->getAmmo() < weapon->getMaxAmmo())
+							{
+								weapon->addAmmo(20);
+								EntityManager::RemoveEntity(testIndex);
+							}
+							break;
+						}
+					}
+					if (testObject->CompareTag(Tag_ArmorPickup))
+					{
+						if (gameObject->CompareTag(Tag_Player))
+						{
+							Player* player = (Player*)gameObject;
+							if (player->getArmor() < 100)
+							{
+								player->addArmor(20);
+								EntityManager::RemoveEntity(testIndex);
+							}
+							break;
+						}
 					}
 				}
+				
 			}
 		}
 	}
@@ -541,6 +579,10 @@ bool DemoGame::Update(float deltaTime)
 				case Tag_PistolAmo:
 				{
 					renderer.ProjectObject(&camera, gameObject->GetPosition(), &ammoPickup);
+				}break;
+				case Tag_ArmorPickup:
+				{
+					renderer.ProjectObject(&camera, gameObject->GetPosition(), &armorPickup);
 				}break;
 				default: {}
 				}

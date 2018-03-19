@@ -37,6 +37,7 @@ protected:
 	Sprite wall;
 	Sprite hudBG;
 	Sprite ammoPickup;
+	Sprite armorPickup;
 
 	vec2 hudP;
 	vec2 hudDims;
