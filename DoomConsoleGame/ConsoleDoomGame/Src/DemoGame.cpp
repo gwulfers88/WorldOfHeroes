@@ -2,24 +2,32 @@
 #include "platform.h"
 #include "File.h"
 #include "Entity.h"
+#include "Enemy.h"
 
-u32 EntityManager::entityCount = 0;
-Entity EntityManager::entities[4096] = {};
+std::vector<GameObject*> EntityManager::entities;
 
-Entity* player = 0;
-u32 playerIndex = 0;
+enum Tags
+{
+	Tag_Player,
+	Tag_Enemy,
+	Tag_Wall,
+	Tag_Pillar,
+	Tag_PistolAmo,
+};
 
 u32 AddPlayer(vec2 pos)
 {
 	pos += Vec2(0.5f, 0.5f);
-	u32 Index = EntityManager::AddEntity(Entity_Player);
-	Entity* player = EntityManager::GetEntity(Index);
-	player->position = pos;
-	player->rotation = 2.0f;
-	player->dims = Vec2(0.1f, 0.1f);
-	player->speed = 500.0f;
-	player->TexIndex = -1;
-	player->isAlive = true;
+	u32 Index = EntityManager::EntityCount();
+	Player* gameObject = CreateObject(Memory::GetPersistantHandle(), Player);
+	gameObject->SetTag(Tag_Player);
+	EntityManager::AddEntity(gameObject);
+	gameObject->SetPosition(pos);
+	gameObject->SetRotation(2.0f);
+	gameObject->SetDimensions(Vec2(0.1f, 0.1f));
+	gameObject->SetSpeed(500.0f);
+	//gameObject->TexIndex = -1;
+	//gameObject->isAlive = true;
 
 	return Index;
 }
@@ -27,14 +35,16 @@ u32 AddPlayer(vec2 pos)
 u32 AddEnemy(vec2 pos)
 {
 	pos += Vec2(0.5f, 0.5f);
-	u32 Index = EntityManager::AddEntity(Entity_Enemy);
-	Entity* enemy = EntityManager::GetEntity(Index);
-	enemy->position = pos;
-	enemy->rotation = 2.0f;
-	enemy->dims = Vec2(0.1f, 0.1f);
-	enemy->speed = 50.0f;
-	enemy->TexIndex = -1;
-	enemy->isAlive = true;
+	u32 Index = EntityManager::EntityCount();
+	Enemy* gameObject = CreateObject(Memory::GetPersistantHandle(), Enemy);
+	gameObject->SetTag(Tag_Enemy);
+	EntityManager::AddEntity(gameObject);
+	gameObject->SetPosition(pos);
+	gameObject->SetRotation(2.0f);
+	gameObject->SetDimensions(Vec2(0.1f, 0.1f));
+	gameObject->SetSpeed(400.0f);
+	//gameObject->TexIndex = -1;
+	//gameObject->isAlive = true;
 
 	return Index;
 }
@@ -42,190 +52,233 @@ u32 AddEnemy(vec2 pos)
 void AddPillar(vec2 pos)
 {
 	pos += Vec2(0.5f, 0.5f);
-	u32 Index = EntityManager::AddEntity(Entity_Pillar);
-	Entity* entity = EntityManager::GetEntity(Index);
-	entity->position = pos;
-	entity->dims = Vec2(0.25f, 0.25f);
-	entity->TexIndex = -1;
+	u32 Index = EntityManager::EntityCount();
+	GameObject* gameObject = CreateObject(Memory::GetPersistantHandle(), GameObject);
+	gameObject->SetTag(Tag_Pillar);
+	EntityManager::AddEntity(gameObject);
+	gameObject->SetPosition(pos);
+	gameObject->SetDimensions(Vec2(0.25f, 0.25f));
+	//gameObject->TexIndex = -1;
 }
 
 void AddWall(vec2 pos)
 {
 	pos += Vec2(0.5f, 0.5f);
-	u32 Index = EntityManager::AddEntity(Entity_Wall);
-	Entity* entity = EntityManager::GetEntity(Index);
-	entity->position = pos;
-	entity->dims = Vec2(0.8f, 0.8f);
-	entity->TexIndex = -1;
+	u32 Index = EntityManager::EntityCount();
+	GameObject* gameObject = CreateObject(Memory::GetPersistantHandle(), GameObject);
+	gameObject->SetTag(Tag_Wall);
+	EntityManager::AddEntity(gameObject);
+	gameObject->SetPosition(pos);
+	gameObject->SetDimensions(Vec2(0.8f, 0.8f));
+	//gameObject->TexIndex = -1;
 }
 
-internal_ bool
-TestWall(r32 WallX, r32 RelX, r32 RelY,
-	r32 PlayerDeltaX, r32 PlayerDeltaY,
-	r32 *tMin, r32 MinY, r32 MaxY)
+void AddPistolAmmo(vec2 pos)
 {
-	bool Hit = false;
+	pos += Vec2(0.5f, 0.5f);
+	u32 Index = EntityManager::EntityCount();
+	GameObject* gameObject = CreateObject(Memory::GetPersistantHandle(), GameObject);
+	gameObject->SetTag(Tag_PistolAmo);
+	gameObject->SetPosition(pos);
+	gameObject->SetDimensions(Vec2(0.5f, 0.5f));
+	EntityManager::AddEntity(gameObject);
+}
 
-	float tEpsilon = 0.1f;
-	if (PlayerDeltaX != 0)
+bool Intersects(vec2 point, vec2 minP, vec2 maxP)
+{
+	return (point.x > minP.x &&
+		point.x < maxP.x &&
+		point.y > minP.y &&
+		point.y < maxP.y);
+}
+
+struct RaycastHitResult
+{
+	GameObject* entity;
+	vec2 point;
+	r32 distance;
+	u32 entityIndex;
+};
+
+bool RayCast(vec2 pos, vec2 dir, RaycastHitResult* HitResult, r32 maxDistance = 16.0f, u32 IgnoreTag = 0)
+{
+	// Ray cast
+	r32 stepSize = 0.1f;
+	while (!HitResult->entity && HitResult->distance < maxDistance)
 	{
-		// % along Delta vector (Direction)
-		float tResult = (WallX - RelX) / PlayerDeltaX;
-		// How far we would have gotten total
-		float Y = RelY + tResult * PlayerDeltaY; // What Y are we in?
+		HitResult->distance += stepSize;
 
-		if (tResult >= 0.0f && *tMin > tResult)
+		vec2 testP = { pos.x + dir.x * HitResult->distance, pos.y + dir.y * HitResult->distance };
+
+		for (u32 entityIndex = 0; entityIndex < EntityManager::EntityCount(); ++entityIndex)
 		{
-			if (Y >= MinY && Y <= MaxY)
+			GameObject* testObject = EntityManager::GetEntity(entityIndex);
+			if (!testObject->CompareTag(IgnoreTag))
 			{
-				//Accept new t // Valid Y
-				*tMin = Maximum(0, tResult - tEpsilon);
-				Hit = true;
+				vec2 minP = testObject->GetPosition() - (testObject->GetDimensions() + Vec2(0.25f, 0.25f));
+				vec2 maxP = testObject->GetPosition() + (testObject->GetDimensions() + Vec2(0.25f, 0.25f));
+
+				if(Intersects(testP, minP, maxP))
+				{
+					// Collision
+					HitResult->entity = testObject;
+					HitResult->point = testP;
+					HitResult->entityIndex = entityIndex;
+
+					return true;
+				}
 			}
 		}
 	}
-	return Hit;
+
+	return false;
 }
-
-void MoveEntity(u32 entityIndex, vec2 dir, r32 deltaTime)
-{
-	// Calculate the right vector based on the Up and the Forward Vector of the player
-	Entity* entity = EntityManager::GetEntity(entityIndex);
-	vec3 up = Vec3(0, 0, 1);
-	vec3 right = Cross(Vec3(entity->forward, 0), up);
-	// Acceleration
-	vec2 acceleration = ((entity->forward * dir.x) + (right.xy * dir.y)) * entity->speed;
-	//vec2 drag = -0.8f * entity->velocity;
-	//acceleration += drag;
-	vec2 oldP = entity->position;
-	vec2 deltaP = ((0.5f*acceleration) * Square(deltaTime)) + (entity->velocity * deltaTime);
-	entity->position += deltaP;
-
-	// Physics Simulation
-	// Collision between the world (WALLS) and the player
-	// Below is collision between pillar obj and the player
-	for (u32 testIndex = 1;
-		testIndex < EntityManager::EntityCount();
-		++testIndex)
-	{
-		if (testIndex != entityIndex)
-		{
-			Entity* testEntity = EntityManager::GetEntity(testIndex);
-
-			vec2 minP = testEntity->position - (testEntity->dims + entity->dims);
-			vec2 maxP = testEntity->position + (testEntity->dims + entity->dims);
-
-			if (entity->position.x > minP.x &&
-				entity->position.x < maxP.x &&
-				entity->position.y > minP.y &&
-				entity->position.y < maxP.y)
-			{
-				// Collision
-				entity->position -= deltaP;
-			}
-		}
-	}
-}
-
-global_variable r32 timer = 0;
-
-void MoveEnemy(u32 entityIndex, u32 targetIndex, Player* playerInfo, r32 deltaTime)
-{
-	// Calculate the right vector based on the Up and the Forward Vector of the player
-	Entity* entity = EntityManager::GetEntity(entityIndex);
-	Entity* target = EntityManager::GetEntity(targetIndex);
-
-	if (target->isAlive)
-	{
-		r32 distance = Length(target->position - entity->position);
-		vec2 direction = {};
-		if (distance < 10.0f && distance >= 2.0f)
-		{
-			if (distance >= 5.0f) // Approach target
-			{
-				entity->forward = Normalize(target->position - entity->position);
-				r32 angle = Dot(entity->forward, player->forward);
-				if (angle <= -0.9f || angle >= 0.0f)
-				{
-					direction.x = 1;
-				}
-				// Move entity
-				MoveEntity(entityIndex, direction, deltaTime);
-			}
-			else if (distance >= 2.0f && distance < 5.0f)
-			{
-				//Attack
-				r32 delay = 1.0f;
-				timer += deltaTime;
-				if (timer >= delay)
-				{
-					if (target->type == EntityType::Entity_Player)
-					{
-						playerInfo->playerDamage(10);
-						target->isAlive = (playerInfo->getHealth() > 0) ? true : false;
-						MoveEntity(targetIndex, Vec2(-1, 0), deltaTime);
-						timer = 0;
-					}
-				}
-			}
-			else
-			{
-				// Backup
-				entity->forward = Normalize(target->position - entity->position);
-				r32 angle = Dot(entity->forward, player->forward);
-				if (angle <= -0.9f || angle >= 0.0f)
-				{
-					direction.x = -1;
-				}
-				// Move entity
-				MoveEntity(entityIndex, direction, deltaTime);
-			}
-		}
-	}
-}
+//
+//void MoveEntity(u32 entityIndex, vec2 dir, r32 deltaTime)
+//{
+//	// Physics Simulation
+//	// Collision between the world (WALLS) and the player
+//	// Below is collision between pillar obj and the player
+//	for (u32 testIndex = 1;
+//		testIndex < EntityManager::EntityCount();
+//		++testIndex)
+//	{
+//		if (testIndex != entityIndex)
+//		{
+//			Entity* testEntity = EntityManager::GetEntity(testIndex);
+//			if (testEntity->type != Entity_None)
+//			{
+//				vec2 minP = testEntity->position - (testEntity->dims + entity->dims);
+//				vec2 maxP = testEntity->position + (testEntity->dims + entity->dims);
+//
+//				if (entity->position.x > minP.x &&
+//					entity->position.x < maxP.x &&
+//					entity->position.y > minP.y &&
+//					entity->position.y < maxP.y)
+//				{
+//					// Collision
+//					entity->position -= deltaP;
+//				}
+//			}
+//		}
+//	}
+//}
+//
+//global_variable r32 timer = 0;
+//
+//void MoveEnemy(u32 entityIndex, u32 targetIndex, Player* playerInfo, r32 deltaTime)
+//{
+//	// Calculate the right vector based on the Up and the Forward Vector of the player
+//	Entity* entity = EntityManager::GetEntity(entityIndex);
+//	Entity* target = EntityManager::GetEntity(targetIndex);
+//
+//	if (target->isAlive)
+//	{
+//		r32 distance = Length(target->position - entity->position);
+//		vec2 direction = {};
+//		if (distance < 10.0f && distance >= 2.0f)
+//		{
+//			if (distance >= 5.0f) // Approach target
+//			{
+//				entity->forward = Normalize(target->position - entity->position);
+//				r32 angle = Dot(entity->forward, player->forward);
+//				if (angle <= -0.9f || angle >= 0.0f)
+//				{
+//					direction.x = 1;
+//				}
+//				// Move entity
+//				MoveEntity(entityIndex, direction, deltaTime);
+//			}
+//			else if (distance >= 2.0f && distance < 5.0f)
+//			{
+//				//Attack
+//				r32 delay = 0.5f;
+//				timer += deltaTime;
+//				if (timer >= delay)
+//				{
+//					if (target->type == EntityType::Entity_Player)
+//					{
+//						playerInfo->playerDamage(10);
+//						target->isAlive = (playerInfo->getHealth() > 0) ? true : false;
+//						MoveEntity(targetIndex, Vec2(-1, 0), deltaTime);
+//						timer = 0;
+//					}
+//				}
+//			}
+//			else
+//			{
+//				// Backup
+//				entity->forward = Normalize(target->position - entity->position);
+//				r32 angle = Dot(entity->forward, player->forward);
+//				if (angle <= -0.9f || angle >= 0.0f)
+//				{
+//					direction.x = -1;
+//				}
+//				// Move entity
+//				MoveEntity(entityIndex, direction, deltaTime);
+//			}
+//		}
+//	}
+//}
 
 void DemoGame::LoadContent()
 {
-	// Data from Player Class
-	playerInfo.setMaxHealth();
-	playerInfo.setMaxArmor();
-	playerInfo.setHealth(100);
-	playerInfo.setArmor(50);
-	
 	// Data from Weapons Class
-	weaponInfo.setWeaponIndex(WEAPONS::PISTOL);
-	weaponInfo.setWeaponName("pistol");
-	weaponInfo.setMaxAmmo(50);
-	weaponInfo.setAmmo(50);
+	weapons[0].setWeaponIndex(WEAPONS::FIST);
+	weapons[0].setWeaponName("fist");
+	weapons[0].setMaxAmmo(0);
+	weapons[0].setAmmo(0);
+	
+	weapons[1].setWeaponIndex(WEAPONS::PISTOL);
+	weapons[1].setWeaponName("pistol");
+	weapons[1].setMaxAmmo(50);
+	weapons[1].setAmmo(50);
 
-	playerInfo.addWeaponToInventory(weaponInfo);
-	playerInfo.setCurWeapons(WEAPONS::PISTOL);
-
-	mapW = 40;
-	mapH = 20;
+	mapW = 80;
+	mapH = 40;
 
 	map =
 	{
-		L".................#######################"
-		L".................#................E....#"
-		L".................#..................E..#"
-		L".................#........P...P........#"
-		L".................#...######...######...#"
-		L".................#...#....P...P....#...#"
-		L".................#...#.............#...#"
-		L"############.....#...############..#...#"
-		L"#.........P#######P..#.............#...#"
-		L"#....S...............#.............#...#"
-		L"#.........P#######P..#..############...#"
-		L"############.....#...#.............#...#"
-		L".................#...#.............#...#"
-		L".................#...############..#...#"
-		L".................#...#.............#...#"
-		L".................#...#..P.P........#...#"
-		L".................#...####D##########...#"
-		L".................#......P.P............#"
-		L".................#..E..................#"
-		L".................#######################"
+		L".................#######################.................#######################"
+		L".................#................E....#.................#................E....#"
+		L".................#..................E..#.................#..................E..#"
+		L".................#........P...P........#.................#........P...P........#"
+		L".................#...######...######...#.................#...######...######...#"
+		L".................#...#....P...P....#...#.................#...#....P...P....#...#"
+		L".................#...#.............#...#.................#...#.............#...#"
+		L"############.....#...############..#...#############.....#...############..#...#"
+		L"#.........P#######P..#.............#...##..A......P#######P....................#"
+		L"#....S...............#.............#...........................................#"
+		L"#.........P#######P..#..############...##..A......P#######P..#..############...#"
+		L"############.....#...#.............#...#############.....#...#.............#...#"
+		L".................#...#.............#...#.................#...#.............#...#"
+		L".................#...############..#...#.................#...############..#...#"
+		L".................#...#.............#...#.................#...#.............#...#"
+		L".................#...#..P.P........#...#.................#...#..P.P........#...#"
+		L".................#...####D##########...#.................#...####D##########...#"
+		L".................#......P.P............#.................#......P.P............#"
+		L".................#..E..................#.................#..E..................#"
+		L".................###..#############..###.................###..###########..#####"
+		L".................###..#############..###.................###..###########..#####"
+		L".................#................E....#.................#................E....#"
+		L".................#..................E..#.................#..................E..#"
+		L".................#........P...P........#.................#........P...P........#"
+		L".................#...######...######...#.................#...######...######...#"
+		L".................#...#....P...P....#...#.................#...#....P...P....#...#"
+		L".................#...#.............#...#.................#...#.............#...#"
+		L"############.....#...############..#...#############.....#...############..#...#"
+		L"#.........P#######P..#............................P#######P....................#"
+		L"#....................#.........................................................#"
+		L"#.........P#######P..#..############...##.....AA..P#######P..#..############...#"
+		L"############.....#...#.............#...#############.....#...#.............#...#"
+		L".................#...#.............#...#.................#...#.............#...#"
+		L".................#...############..#...#.................#...############..#...#"
+		L".................#...#.............#...#.................#...#.............#...#"
+		L".................#...#..P.P........#...#.................#...#..P.P........#...#"
+		L".................#...####D##########...#.................#...####D##########...#"
+		L".................#......P.P............#.................#......P.P............#"
+		L".................#..E..................#.................#..E..................#"
+		L".................#######################.................#######################"
 	};
 
 	// Load Fonts
@@ -260,7 +313,8 @@ void DemoGame::LoadContent()
 	hudDims = Vec2((r32)w, 20);
 	hudP = Vec2(0, (r32)renderer.GetRenderBuffers()->Height - hudDims.y);
 
-	EntityManager::AddEntity(Entity_None);	// Null Entity
+	// Load the ammo pickup
+	LoadSprite("data/pickups/ammo_pickup_01.sprt", &ammoPickup);
 
 	// Setup player
 	for (int y = 0; y < mapH; ++y)
@@ -271,7 +325,11 @@ void DemoGame::LoadContent()
 			if (token == 'S')
 			{
 				playerIndex = AddPlayer(Vec2(x, y));
-				player = EntityManager::GetEntity(playerIndex);
+				player = (Player*)EntityManager::GetEntity(playerIndex);
+				
+				player->addWeaponToInventory(&weapons[0]);
+				player->addWeaponToInventory(&weapons[1]);
+				player->setCurWeapons(WEAPONS::PISTOL);
 			}
 			else if (token == 'P')
 			{
@@ -285,9 +343,63 @@ void DemoGame::LoadContent()
 			{
 				AddEnemy(Vec2(x, y));
 			}
+			else if (token == 'A')
+			{
+				AddPistolAmmo(Vec2(x, y));
+			}
 		}
 	}
-	renderer.BuildWorldHash();
+
+	for (u32 entityIndex = 0;
+		entityIndex < EntityManager::EntityCount();
+		++entityIndex)
+	{
+		GameObject* gameObject = EntityManager::GetEntity(entityIndex);
+		if (gameObject->CompareTag(Tag_Enemy))
+		{
+			Enemy* enemy = (Enemy*)gameObject;
+			enemy->setTarget(player);
+		}
+	}
+
+}
+
+void DemoGame::HandleCollision(r32 deltaTime, GameObject* gameObject)
+{
+	// Physics Simulation
+	// Collision between the world (WALLS) and the player
+	// Below is collision between pillar obj and the player
+	for (u32 testIndex = 0;
+		testIndex < EntityManager::EntityCount();
+		++testIndex)
+	{
+		GameObject* testObject = EntityManager::GetEntity(testIndex);
+		if (testObject != gameObject)
+		{
+			vec2 minP = testObject->GetPosition() - (testObject->GetDimensions() + gameObject->GetDimensions());
+			vec2 maxP = testObject->GetPosition() + (testObject->GetDimensions() + gameObject->GetDimensions());
+			
+			if(Intersects(gameObject->GetPosition(), minP, maxP))
+			{
+				// Collision
+				if (!testObject->CompareTag(Tag_PistolAmo))
+				{
+					gameObject->Move(-gameObject->dir, deltaTime);
+					break;
+				}
+				else
+				{
+					if (gameObject->CompareTag(Tag_Player))
+					{
+						Player* player = (Player*)gameObject;
+						weapons[player->getCurWeapons()].addAmmo(20);
+						EntityManager::RemoveEntity(testIndex);
+						break;
+					}
+				}
+			}
+		}
+	}
 }
 
 r32 gameOverTimer = 6.0f;
@@ -299,42 +411,40 @@ bool DemoGame::Update(float deltaTime)
 	if (GetAsyncKeyState(VK_ESCAPE) & 0x8000)
 		Quit = true;
 
-	vec2 direction = {}; // X: Fwd/Bkwd, Y: StrafeL, StrafeR
-
-	if (player->isAlive)
+	if (player->IsAlive())
 	{
+		player->dir = Vec2(0, 0); // X: Fwd/Bkwd, Y: StrafeL, StrafeR
+
 		if (Controller)
 		{
 			// Forward / Backward Movement
 			if (Controller->MoveUp.pressed)
 			{
-				direction.x = 1;
+				player->dir.x = 1;
 			}
 			else if (Controller->MoveDown.pressed)
 			{
-				direction.x = -1;
+				player->dir.x = -1;
 			}
 
 			// Roatting the Angle CCW / CW
 			if (Controller->MoveLeft.pressed)
 			{
-				player->rotation -= (10 * 0.75f) * deltaTime;
+				player->Rotate(-(10 * 0.75f) * deltaTime);
 			}
 			else if (Controller->MoveRight.pressed)
 			{
-				player->rotation += (10 * 0.75f) * deltaTime;
+				player->Rotate((10 * 0.75f) * deltaTime);
 			}
-
-			player->forward = Normalize(Vec2(sinf(player->rotation), cosf(player->rotation)));
 
 			// Straffe Movement
 			if (Controller->ActionLeft.pressed)
 			{
-				direction.y = -1;
+				player->dir.y = -1;
 			}
 			else if (Controller->ActionRight.pressed)
 			{
-				direction.y = 1;
+				player->dir.y = 1;
 			}
 
 			// Handle shooting
@@ -347,61 +457,39 @@ bool DemoGame::Update(float deltaTime)
 			}
 		}
 
-		MoveEntity(playerIndex, direction, deltaTime);
+		player->Update(deltaTime);
+		HandleCollision(deltaTime, player);
 
+		// Handle Shooting event
 		if (wantsToShoot)
 		{
-			// Ray cast
-			Entity* HitEntity = 0;
-			vec2 HitPoint = {};
-			u32 Index = 0;
-			r32 stepSize = 0.1f;
-			r32 distance = 0;
-
-			vec2 RayDirection = player->forward;
-
-			while(!HitEntity && distance < 16)
+			Weapons* currentWeapon = weapons + player->getCurWeapons();
+			if (currentWeapon)
 			{
-				distance += stepSize;
-
-				vec2 testP = {player->position.x + RayDirection.x * distance, player->position.y + RayDirection.y * distance };
-				
-				for (u32 entityIndex = 1; entityIndex < EntityManager::EntityCount(); ++entityIndex)
+				if (currentWeapon->getAmmo() > 0)
 				{
-					if (entityIndex != playerIndex)
+					RaycastHitResult Hit = {};
+					if (RayCast(player->GetPosition(), player->GetForward(), &Hit))
 					{
-						Entity* testEntity = EntityManager::GetEntity(entityIndex);
-						vec2 minP = testEntity->position - (testEntity->dims);
-						vec2 maxP = testEntity->position + (testEntity->dims);
-
-						if (testP.x > minP.x &&
-							testP.x < maxP.x &&
-							testP.y > minP.y &&
-							testP.y < maxP.y)
+						if (Hit.entity)
 						{
-							// Collision
-							HitEntity = testEntity;
-							HitPoint = testP;
-							Index = entityIndex;
-							break;
+							Enemy* enemy = (Enemy*)Hit.entity;
+							if(enemy)
+							{
+								if (enemy->IsAlive())
+								{
+									enemy->takeDamage(20);
+								}
+								else
+								{
+									EntityManager::RemoveEntity(Hit.entityIndex);
+								}
+							}
 						}
 					}
-				}
-
-				if (HitEntity)
-					break;
-			}
-
-			if (HitEntity)
-			{
-				if (HitEntity->isAlive)
-				{
-					HitEntity->isAlive = false;
-					EntityManager::RemoveEntity(Index);
+					currentWeapon->subtractAmmo(1);
 				}
 			}
-
-			weaponInfo.subtractAmmo(1);
 			wantsToShoot = false;
 		}
 
@@ -409,18 +497,13 @@ bool DemoGame::Update(float deltaTime)
 		{
 			if (entityIndex != playerIndex)
 			{
-				Entity* entity = EntityManager::GetEntity(entityIndex);
+				GameObject* gameObject = EntityManager::GetEntity(entityIndex);
 
-				if (entity->isAlive)
+				if (gameObject->CompareTag(Tag_Enemy))
 				{
-					switch (entity->type)
-					{
-					case Entity_Enemy:
-					{
-						MoveEnemy(entityIndex, playerIndex, &playerInfo, deltaTime);
-					}break;
-					default: {}
-					}
+					// TODO: Update Enemies
+					gameObject->Update(deltaTime);
+					HandleCollision(deltaTime, gameObject);
 				}
 			}
 		}
@@ -429,29 +512,35 @@ bool DemoGame::Update(float deltaTime)
 		renderer.ClearBuffer(PIXEL_COLOR_GREY);
 
 		Camera camera = {};
-		camera.Position = player->position;
-		camera.rotation = player->rotation;
+		camera.Position = player->GetPosition();
+		camera.rotation = player->GetRotation();
 		camera.FOV = PI / 2.0f;
 		camera.Depth = 40.0f;
 
 		// Projecting 2D to 3D world
 		renderer.ProjectWorld(&camera, map, mapW, mapH, &wall);
 
-		for (u32 entityIndex = 1; entityIndex < EntityManager::EntityCount(); ++entityIndex)
+		for (u32 entityIndex = 0; entityIndex < EntityManager::EntityCount(); ++entityIndex)
 		{
 			if (entityIndex != playerIndex)
 			{
-				Entity* entity = EntityManager::GetEntity(entityIndex);
+				GameObject* gameObject = EntityManager::GetEntity(entityIndex);
 
-				switch (entity->type)
+				switch (gameObject->GetTag())
 				{
-				case Entity_Pillar:
+				case Tag_Pillar:
 				{
-					renderer.ProjectObject(&camera, entity->position, &pillar);
+					renderer.ProjectObject(&camera, gameObject->GetPosition(), &pillar);
 				}break;
-				case Entity_Enemy:
+				case Tag_Enemy:
 				{
-					renderer.ProjectObject(&camera, entity->position, &wall);
+					Enemy* enemy = (Enemy*)gameObject;
+					if(enemy->IsAlive())
+						renderer.ProjectObject(&camera, gameObject->GetPosition(), &wall);
+				}break;
+				case Tag_PistolAmo:
+				{
+					renderer.ProjectObject(&camera, gameObject->GetPosition(), &ammoPickup);
 				}break;
 				default: {}
 				}
@@ -491,24 +580,24 @@ bool DemoGame::Update(float deltaTime)
 		}
 
 		// Draw player
-		renderer.DrawPixel(player->position + screenOnePos, PIXEL_SOLID, PIXEL_COLOR_LIGHT_GREEN);
+		renderer.DrawPixel(player->GetPosition() + screenOnePos, PIXEL_SOLID, PIXEL_COLOR_LIGHT_GREEN);
 
 		// Draw Pillars
 		for (u32 entityIndex = 1; entityIndex < EntityManager::EntityCount(); ++entityIndex)
 		{
 			if (entityIndex != playerIndex)
 			{
-				Entity* entity = EntityManager::GetEntity(entityIndex);
+				GameObject* gameObject = EntityManager::GetEntity(entityIndex);
 
-				switch (entity->type)
+				switch (gameObject->GetTag())
 				{
-				case Entity_Pillar:
+				case Tag_Pillar:
 				{
-					renderer.DrawPixel(entity->position + screenOnePos, PIXEL_SEMI_DARK, PIXEL_COLOR_LIGHT_RED);
+					renderer.DrawPixel(gameObject->GetPosition() + screenOnePos, PIXEL_SEMI_DARK, PIXEL_COLOR_LIGHT_RED);
 				}break;
-				case Entity_Enemy:
+				case Tag_Enemy:
 				{
-					renderer.DrawPixel(entity->position + screenOnePos, PIXEL_SEMI_DARK, PIXEL_COLOR_LIGHT_GREEN);
+					renderer.DrawPixel(gameObject->GetPosition() + screenOnePos, PIXEL_SEMI_DARK, PIXEL_COLOR_LIGHT_GREEN);
 				}break;
 				default: {}
 				}
@@ -524,7 +613,7 @@ bool DemoGame::Update(float deltaTime)
 			if (i == 0)
 			{
 				char ammo[3];
-				itoa(playerInfo.getCurWeapons().getAmmo(), ammo, 10);
+				itoa(weapons[player->getCurWeapons()].getAmmo(), ammo, 10);
 				ammo[2] = '\0';
 
 				renderer.DrawString(ammo, ArrayCount(ammo), font, ArrayCount(font), hudP + bg_offset + Vec2(10, 0), fontDims);
@@ -535,7 +624,7 @@ bool DemoGame::Update(float deltaTime)
 			else if (i == 1)
 			{
 				char health[4];
-				itoa(playerInfo.getHealth(), health, 10);
+				itoa(player->getHealth(), health, 10);
 				health[3] = '\0';
 
 				renderer.DrawString(health, ArrayCount(health), font, ArrayCount(font), hudP + bg_offset + Vec2(10, 0), fontDims);
@@ -545,7 +634,7 @@ bool DemoGame::Update(float deltaTime)
 			}
 			else if (i == 2)
 			{
-				renderer.DrawString(playerInfo.getCurWeapons().getWeaponName(), strlen(playerInfo.getCurWeapons().getWeaponName()), font, ArrayCount(font), hudP + bg_offset + Vec2(0.5f, 0), fontDims);
+				renderer.DrawString(weapons[player->getCurWeapons()].getWeaponName(), strlen(weapons[player->getCurWeapons()].getWeaponName()), font, ArrayCount(font), hudP + bg_offset + Vec2(0.5f, 0), fontDims);
 				u32 strW = ArrayCount("arms") * fontDims.x;
 				u32 strHalf = RoundReal32ToUInt32(strW * 0.5f);
 				renderer.DrawString("arms", ArrayCount("arms"), font, ArrayCount(font), hudP + text_offset, fontDims);
@@ -553,7 +642,7 @@ bool DemoGame::Update(float deltaTime)
 			else if (i == 4)
 			{
 				char armor[4];
-				itoa(playerInfo.getArmor(), armor, 10);
+				itoa(player->getArmor(), armor, 10);
 				armor[3] = '\0';
 
 				renderer.DrawString(armor, ArrayCount(armor), font, ArrayCount(font), hudP + bg_offset + Vec2(10, 0), fontDims);
@@ -588,5 +677,5 @@ bool DemoGame::Update(float deltaTime)
 
 void DemoGame::UnloadContent()
 {
-
+	EntityManager::Clear();
 }

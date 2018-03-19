@@ -6,56 +6,6 @@ ConsoleRenderer::~ConsoleRenderer() {}
 
 ScreenBuffer* ConsoleRenderer::GetRenderBuffers() { return screen; }
 
-// This function will build the world hash map.
-void ConsoleRenderer::BuildWorldHash()
-{
-	u32 totalHashCount = EntityManager::EntityCount() * 2;
-	worldHash = CreateArray(Memory::GetPersistantHandle(), Entity, totalHashCount);
-
-	worldHashCount = totalHashCount;
-
-	// Loop through all of the entities and add them to the hash table (ONLY THINGS THAT DONT MOVE!!!)
-	for (u32 EntityIndex = 0; EntityIndex < EntityManager::EntityCount(); EntityIndex++)
-	{
-		Entity* entity = EntityManager::GetEntity(EntityIndex);
-		if (entity->type == Entity_Wall || entity->type == Entity_Pillar)
-		{
-			AddEntityToHash(entity);
-		}
-	}
-}
-
-void ConsoleRenderer::AddEntityToHash(Entity* entity)
-{
-	u32 Hash = HashFunction(entity->position);
-	Entity* EntitySlot = worldHash + Hash;
-	while (EntitySlot->type != 0)
-	{
-		Hash++;
-		Hash = Hash % worldHashCount;
-		EntitySlot = worldHash + Hash;
-	}
-	worldHash[Hash] = *entity;
-}
-
-Entity* ConsoleRenderer::GetEntityFromHash(vec2 pos)
-{
-	u32 Hash = HashFunction(pos);
-	Entity* entity = worldHash + Hash;
-	return entity;
-}
-
-u32 ConsoleRenderer::HashFunction(vec2 pos)
-{
-	u32 x = RoundReal32ToUInt32(pos.x);
-	u32 y = RoundReal32ToUInt32(pos.y);
-
-	u32 bit = ((x << 0) | (y << 16));
-	
-	u32 Hash = bit % worldHashCount;
-	return Hash;
-}
-
 void ConsoleRenderer::SetScreenBuffer(ScreenBuffer *_screen)
 {
 	screen = _screen;
