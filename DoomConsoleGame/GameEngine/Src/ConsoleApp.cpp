@@ -251,6 +251,17 @@ void ConsoleApp::Run(BaseGame* game)
 						Controller.ActionDown.pressed = false;
 					}
 				}
+				if (key == VK_SPACE)
+				{
+					if ((GetAsyncKeyState(key) & 0x8000))
+					{
+						Controller.RightTrigger.pressed = true;
+					}
+					else
+					{
+						Controller.RightTrigger.pressed = false;
+					}
+				}
 			}
 
 			game->SetController(&Controller);

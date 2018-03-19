@@ -82,9 +82,15 @@ union game_controller
 
 		game_button Start;
 		game_button Back;
+
+		game_button RightTrigger;
+		game_button LeftTrigger;
+
+		game_button RightBumper;
+		game_button LeftBumper;
 	};
 
-	game_button Buttons[10];
+	game_button Buttons[14];
 };
 
 #endif

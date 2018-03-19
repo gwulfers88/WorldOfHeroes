@@ -21,9 +21,11 @@ struct Entity
 	vec2 position;
 	vec2 dims;
 	vec2 forward;
+	vec2 velocity;
 	r32 rotation;
 	r32 speed;
 	u32 TexIndex;
+	bool isAlive;
 	EntityType type;
 };
 
@@ -40,6 +42,7 @@ public:
 
 		Entity* entity = entities + EntityIndex;
 		entity->type = type;
+		entity->velocity = {};
 
 		return EntityIndex;
 	}
@@ -49,6 +52,14 @@ public:
 		Assert((EntityIndex < entityCount));
 		Entity* result = entities + EntityIndex;
 		return result;
+	}
+
+	internal_ void RemoveEntity(u32 EntityIndex)
+	{
+		Assert((EntityIndex < entityCount));
+		Entity* result = entities + EntityIndex;
+		result = {};
+		result->type = Entity_None;
 	}
 
 	internal_ u32 EntityCount()
