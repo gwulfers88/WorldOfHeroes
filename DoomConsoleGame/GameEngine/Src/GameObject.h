@@ -15,6 +15,9 @@ public:
 	void SetDimensions(vec2);
 	void SetSpeed(r32);
 	void SetTag(u32);
+	void SetCanCollide(bool);
+	void SetIsActive(bool);
+
 	bool CompareTag(u32 other) { return tag == other; }
 
 	vec2 GetPosition() { return position; }
@@ -22,6 +25,8 @@ public:
 	vec2 GetForward() { return forward; }
 	u32 GetTag() { return tag; }
 	r32 GetRotation() { return rotation; }
+	bool CanCollide() { return canCollide; }
+	bool IsActive() { return isActive; }
 
 	void Rotate(r32 angle) { rotation += angle; }
 	void Move(vec2 direction, r32 deltaTime);
@@ -33,6 +38,8 @@ protected:
 	void RecalculateTransform();
 
 	bool isDirty;
+	bool canCollide;
+	bool isActive;
 	vec2 dimensions;
 	vec2 position;
 	vec2 velocity;

@@ -3,6 +3,8 @@
 GameObject::GameObject()
 {
 	isDirty = true;
+	canCollide = true;
+	isActive = true;
 	dimensions = {};
 	position = {};
 	velocity = {};
@@ -40,6 +42,16 @@ void GameObject::SetSpeed(r32 newSpeed)
 void GameObject::SetTag(u32 newTag)
 {
 	tag = newTag;
+}
+
+void GameObject::SetCanCollide(bool collidable)
+{
+	canCollide = collidable;
+}
+
+void GameObject::SetIsActive(bool activated)
+{
+	isActive = activated;
 }
 
 void GameObject::Move(vec2 direction, r32 deltaTime)

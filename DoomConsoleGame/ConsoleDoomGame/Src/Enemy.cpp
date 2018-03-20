@@ -36,7 +36,7 @@ void Enemy::Update(r32 deltaTime)
 
 	if(target)
 		distance = Length(target->GetPosition() - position);
-
+	damagedPlayer = false;
 	currentState = IsAlive() ? currentState : ES_Die;
 
 	switch (currentState)
@@ -88,6 +88,7 @@ void Enemy::Update(r32 deltaTime)
 				attackTimer += deltaTime;
 				if (attackTimer >= delay)
 				{
+					damagedPlayer = true;
 					player->playerDamage(10);
 					player->Move(Vec2(-1, 0), deltaTime);
 					attackTimer = 0;
@@ -108,6 +109,7 @@ void Enemy::Update(r32 deltaTime)
 	case ES_Die:
 	{
 		target = 0;
+		SetIsActive(IsAlive());
 	}break;
 
 	}

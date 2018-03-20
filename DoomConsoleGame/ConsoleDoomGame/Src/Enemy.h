@@ -29,8 +29,10 @@ public:
 	virtual void Update(r32) override;
 	bool IsAlive() { return getHealth() > 0; }
 	void takeDamage(u32 damage);
+	bool hasDamagedPlayer() { return damagedPlayer; }
 
 protected:
+	bool damagedPlayer;
 	u32 health;
 	u32 maxHealth;
 	u32 damage;

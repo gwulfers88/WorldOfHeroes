@@ -12,6 +12,7 @@ enum Tags
 	Tag_Player,
 	Tag_Enemy,
 	Tag_Wall,
+	Tag_Door,
 	Tag_Pillar,
 	Tag_PistolAmo,
 	Tag_ArmorPickup,
@@ -70,6 +71,18 @@ void AddWall(vec2 pos)
 	u32 Index = EntityManager::EntityCount();
 	GameObject* gameObject = CreateObject(Memory::GetPersistantHandle(), GameObject);
 	gameObject->SetTag(Tag_Wall);
+	EntityManager::AddEntity(gameObject);
+	gameObject->SetPosition(pos);
+	gameObject->SetDimensions(Vec2(0.8f, 0.8f));
+	//gameObject->TexIndex = -1;
+}
+
+void AddDoor(vec2 pos)
+{
+	pos += Vec2(0.5f, 0.5f);
+	u32 Index = EntityManager::EntityCount();
+	GameObject* gameObject = CreateObject(Memory::GetPersistantHandle(), GameObject);
+	gameObject->SetTag(Tag_Door);
 	EntityManager::AddEntity(gameObject);
 	gameObject->SetPosition(pos);
 	gameObject->SetDimensions(Vec2(0.8f, 0.8f));
@@ -298,6 +311,10 @@ void DemoGame::LoadContent()
 			{
 				AddWall(Vec2(x, y));
 			}
+			else if (token == 'D')
+			{
+				AddDoor(Vec2(x, y));
+			}
 			else if (token == 'E')
 			{
 				AddEnemy(Vec2(x, y));
@@ -343,14 +360,14 @@ void DemoGame::HandleCollision(r32 deltaTime, GameObject* gameObject)
 	{
 		GameObject* testObject = EntityManager::GetEntity(testIndex);
 		// Make sure to ignore the gameObject who is checking for collisions
-		if (testObject != gameObject)
+		if (testObject->IsActive() && testObject != gameObject)
 		{
 			// Build collision volumes
 			vec2 minP = testObject->GetPosition() - (testObject->GetDimensions() + gameObject->GetDimensions());
 			vec2 maxP = testObject->GetPosition() + (testObject->GetDimensions() + gameObject->GetDimensions());
 			
 			// Does it intersect?
-			if(Intersects(gameObject->GetPosition(), minP, maxP))
+			if(Intersects(gameObject->GetPosition(), minP, maxP) && testObject->CanCollide())
 			{
 				// Collision
 				// Collision between non pickup objects
@@ -359,6 +376,12 @@ void DemoGame::HandleCollision(r32 deltaTime, GameObject* gameObject)
 					// Move them back so they dont overlap
 					// TODO: Reflect the velocity to avoid getting stuck on collision
 					gameObject->Move(-gameObject->dir, deltaTime);
+
+					if (testObject->CompareTag(Tag_Door))
+					{
+						testObject->SetIsActive(false);
+					}
+
 					break;
 				}
 				else 
@@ -378,7 +401,7 @@ void DemoGame::HandleCollision(r32 deltaTime, GameObject* gameObject)
 							break;
 						}
 					}
-					if (testObject->CompareTag(Tag_ArmorPickup))
+					else if (testObject->CompareTag(Tag_ArmorPickup))
 					{
 						if (gameObject->CompareTag(Tag_Player))
 						{
@@ -391,7 +414,7 @@ void DemoGame::HandleCollision(r32 deltaTime, GameObject* gameObject)
 							break;
 						}
 					}
-					if (testObject->CompareTag(Tag_HealthPickup))
+					else if (testObject->CompareTag(Tag_HealthPickup))
 					{
 						if (gameObject->CompareTag(Tag_Player))
 						{
@@ -503,6 +526,7 @@ bool DemoGame::Update(float deltaTime)
 			wantsToShoot = false;
 		}
 
+		u16 ClearColor = PIXEL_COLOR_GREY;
 		for (u32 entityIndex = 0; entityIndex < EntityManager::EntityCount(); ++entityIndex)
 		{
 			if (entityIndex != playerIndex)
@@ -513,13 +537,17 @@ bool DemoGame::Update(float deltaTime)
 				{
 					// TODO: Update Enemies
 					gameObject->Update(deltaTime);
+					if (((Enemy*)gameObject)->hasDamagedPlayer())
+					{
+						ClearColor = PIXEL_COLOR_LIGHT_RED;
+					}
 					HandleCollision(deltaTime, gameObject);
 				}
 			}
 		}
 
 		// Clear buffer to certain color
-		renderer.ClearBuffer(PIXEL_COLOR_GREY);
+		renderer.ClearBuffer(ClearColor);
 
 		Camera camera = {};
 		camera.Position = player->GetPosition();
