@@ -16,11 +16,12 @@ Inventory::Inventory() {}
 
 Inventory::~Inventory() {}
 
-
+// Setters
 void Inventory::setDoorKeyIndex(KEYS k) {
 	_doorKeyIndex = k;
 }
 
+// Getters
 KEYS Inventory::getDoorKeyIndex() const {
 	return _doorKeyIndex;
 }

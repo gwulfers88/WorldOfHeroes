@@ -27,6 +27,8 @@ public:
 	Inventory();
 	~Inventory();
 
+	//i32 storedDoorKeys[3];
+
 	// Setters
 	void setDoorKeyIndex(KEYS);
 

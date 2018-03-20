@@ -95,7 +95,7 @@ void AddArmorPickup(vec2 pos)
 	gameObject->SetDimensions(Vec2(0.5f, 0.5f));
 	EntityManager::AddEntity(gameObject);
 }
-
+// Checks to see if this point is intersecting with the collision box
 bool Intersects(vec2 point, vec2 minP, vec2 maxP)
 {
 	return (point.x > minP.x &&
