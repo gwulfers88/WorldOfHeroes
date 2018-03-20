@@ -14,28 +14,27 @@ This file is the header file for the Inventory Class
 
 #ifndef INVENTORY_H
 #define INVENTORY_H
-/*
+
+// Keys Index
 enum KEYS {
 	RED = 0,
 	BLUE,
 	GREEN
 };
-*/
+
 class Inventory {
 public:
 	Inventory();
 	~Inventory();
 
 	// Setters
-	//void setDoorKeyIndex(KEYS);
+	void setDoorKeyIndex(KEYS);
 
 	// Getters
-	//KEYS getDoorKeyIndex() const;
+	KEYS getDoorKeyIndex() const;
 
 private:
-	
-	//KEYS _doorKeyIndex;
-
+	KEYS _doorKeyIndex;
 };
 #endif
 

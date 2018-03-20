@@ -61,12 +61,12 @@ private:
 	i8* _name;
 
 	// Weapons Slots
-	WEAPONS _curWeaponsIndex; // Curent Index
+	WEAPONS _curWeaponsIndex; // Current Index
 	i32 _maxWeapons; // Max Number of Weapons
 	Weapons _weapons[2]; // Weapons Array
 
 	// Door Keys
-	//Inventory _doorKeys[3];
+	Inventory _doorKeys[3]; // Keys Array
 
 };
 #endif
