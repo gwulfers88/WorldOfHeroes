@@ -26,6 +26,8 @@ public:
 	virtual bool Update(float deltaTime) override;
 	virtual void UnloadContent() override;
 
+	void HandleCollision(r32 deltaTime, GameObject* gameObject);
+
 protected:
 	int mapW;
 	int mapH;
@@ -34,12 +36,16 @@ protected:
 	Sprite pillar;
 	Sprite wall;
 	Sprite hudBG;
+	Sprite ammoPickup;
+	Sprite armorPickup;
 
 	vec2 hudP;
 	vec2 hudDims;
 
-	Player playerInfo;
-	Weapons weaponInfo;
+	Weapons weapons[2];
+
+	Player* player;
+	u32 playerIndex;
 
 	Sprite font[36];
 	vec2 fontDims;

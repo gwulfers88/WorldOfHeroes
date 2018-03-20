@@ -11,38 +11,51 @@ Description:
 ===========================================================
 **********************************************************/
 #include "Player.h"
+#include "memory.h"
+
+WEAPONS Player::_curWeaponsIndex = WEAPONS::FIST;
 
 Player::Player(i8* name)
 	: _health(0),
 	_armor(0),
 	_maxHealth(100),
 	_maxArmor(100),
-	_curWeaponsIndex(FIST),
 	_maxWeapons(2) {
-
-	// Set All Weapons to 0 Ammo
-	for (i32 i = 0; i < _maxWeapons; i++) {
-		if (i == 0) {
-			_weapons[i].setWeaponIndex(WEAPONS::FIST);
-		}
-		else if (i == 1) {
-			_weapons[i].setWeaponIndex(WEAPONS::PISTOL);
-		}
-		_weapons[i].setAmmo(0);
-	}
 
 	setName(name);
 }
 
-Player::~Player() {}
+Player::~Player() {
+	
+}
 
 // For Unit Test Only
-Player::Player() {}
+Player::Player()
+: GameObject()
+{
+	InitPlayer();
+}
 
-void Player::addWeaponToInventory(Weapons w) {
-	if (_weapons[w.getWeaponIndex()].getWeaponIndex() < 0) {
-		_weapons[w.getWeaponIndex()] = w;
-	}
+void Player::InitPlayer()
+{
+	setMaxHealth();
+	setMaxArmor();
+	setHealth(100);
+	setArmor(50);
+
+	_maxWeapons = 2;
+
+	dir = {};
+}
+
+void Player::Update(r32 deltaTime)
+{
+	GameObject::Update(deltaTime);
+	Move(dir, deltaTime);
+}
+
+void Player::addWeaponToInventory(Weapons* w) {
+	_weapons[w->getWeaponIndex()] = w;
 }
 
 // Setter Functions
@@ -160,8 +173,8 @@ i32 Player::getHealth() const {
 	return _health;
 }
 
-Weapons Player::getCurWeapons() const {
-	return _weapons[_curWeaponsIndex];
+WEAPONS Player::getCurWeapons() {
+	return _curWeaponsIndex;
 }
 
 

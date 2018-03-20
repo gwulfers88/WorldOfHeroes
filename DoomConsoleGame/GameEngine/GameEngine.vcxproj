@@ -132,6 +132,7 @@
   <ItemGroup>
     <ClCompile Include="Src\ConsoleApp.cpp" />
     <ClCompile Include="Src\ConsoleRenderer.cpp" />
+    <ClCompile Include="Src\GameObject.cpp" />
     <ClCompile Include="Src\memory.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -140,6 +141,7 @@
     <ClInclude Include="Src\ConsoleRenderer.h" />
     <ClInclude Include="Src\Entity.h" />
     <ClInclude Include="Src\File.h" />
+    <ClInclude Include="Src\GameObject.h" />
     <ClInclude Include="Src\memory.h" />
     <ClInclude Include="Src\platform.h" />
     <ClInclude Include="Src\Sprite.h" />

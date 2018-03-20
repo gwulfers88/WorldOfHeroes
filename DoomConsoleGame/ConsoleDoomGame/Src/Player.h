@@ -16,16 +16,24 @@ Description:
 #include "platform.h"
 #include "Weapons.h"
 #include "Inventory.h"
+#include "GameObject.h"
+#include <vector>
 
-class Player {
+class Player : public GameObject {
 public:
 	// Unit Test Only
 	Player();
 
 	Player(i8* name);
-	~Player(void);
+	virtual ~Player(void);
 
-	void addWeaponToInventory(Weapons);
+	void InitPlayer();
+	
+	virtual void Update(r32 deltaTime) override;
+
+	bool IsAlive() { return (getHealth() > 0); }
+
+	void addWeaponToInventory(Weapons*);
 	//void deleteWeaponFromInventory(Weapons);
 
 	i32 playerDamage(i32);
@@ -46,7 +54,7 @@ public:
 	i32 getHealth() const;
 	i32 getArmor() const;
 	i8* getName() const;
-	Weapons getCurWeapons() const;
+	WEAPONS getCurWeapons();
 	
 private:
 	// Current Health and Armor 	
@@ -61,9 +69,9 @@ private:
 	i8* _name;
 
 	// Weapons Slots
-	WEAPONS _curWeaponsIndex; // Current Index
+	static WEAPONS _curWeaponsIndex; // Curent Index
 	i32 _maxWeapons; // Max Number of Weapons
-	Weapons _weapons[2]; // Weapons Array
+	Weapons* _weapons[2]; // Weapons Array
 
 	// Door Keys
 	Inventory _doorKeys[3]; // Keys Array

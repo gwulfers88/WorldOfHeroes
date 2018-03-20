@@ -145,12 +145,14 @@
   <ItemGroup>
     <ClCompile Include="Src\Demo.cpp" />
     <ClCompile Include="Src\DemoGame.cpp" />
+    <ClCompile Include="Src\Enemy.cpp" />
     <ClCompile Include="Src\Inventory.cpp" />
     <ClCompile Include="Src\Player.cpp" />
     <ClCompile Include="Src\Weapons.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Src\DemoGame.h" />
+    <ClInclude Include="Src\Enemy.h" />
     <ClInclude Include="Src\Inventory.h" />
     <ClInclude Include="Src\Player.h" />
     <ClInclude Include="Src\Weapons.h" />
