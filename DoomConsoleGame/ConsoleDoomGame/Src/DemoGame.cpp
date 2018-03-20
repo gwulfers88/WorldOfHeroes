@@ -6,6 +6,7 @@
 
 std::vector<GameObject*> EntityManager::entities;
 
+// Tags to identify objects
 enum Tags
 {
 	Tag_Player,
@@ -14,6 +15,7 @@ enum Tags
 	Tag_Pillar,
 	Tag_PistolAmo,
 	Tag_ArmorPickup,
+	Tag_HealthPickup,
 };
 
 u32 AddPlayer(vec2 pos)
@@ -96,6 +98,17 @@ void AddArmorPickup(vec2 pos)
 	EntityManager::AddEntity(gameObject);
 }
 
+void AddHealthPickup(vec2 pos)
+{
+	pos += Vec2(0.5f, 0.5f);
+	u32 Index = EntityManager::EntityCount();
+	GameObject* gameObject = CreateObject(Memory::GetPersistantHandle(), GameObject);
+	gameObject->SetTag(Tag_HealthPickup);
+	gameObject->SetPosition(pos);
+	gameObject->SetDimensions(Vec2(0.5f, 0.5f));
+	EntityManager::AddEntity(gameObject);
+}
+
 bool Intersects(vec2 point, vec2 minP, vec2 maxP)
 {
 	return (point.x > minP.x &&
@@ -118,18 +131,24 @@ bool RayCast(vec2 pos, vec2 dir, RaycastHitResult* HitResult, r32 maxDistance = 
 	r32 stepSize = 0.1f;
 	while (!HitResult->entity && HitResult->distance < maxDistance)
 	{
+		// Current distance the ray cast has traveled.
 		HitResult->distance += stepSize;
 
+		// current position testing for collision
 		vec2 testP = { pos.x + dir.x * HitResult->distance, pos.y + dir.y * HitResult->distance };
 
+		// Loop through our game objects to see if we have hit something.
 		for (u32 entityIndex = 0; entityIndex < EntityManager::EntityCount(); ++entityIndex)
 		{
+			// test entity if it is not being ignored.
 			GameObject* testObject = EntityManager::GetEntity(entityIndex);
 			if (!testObject->CompareTag(IgnoreTag))
 			{
+				// Calculate the collision box.
 				vec2 minP = testObject->GetPosition() - (testObject->GetDimensions() + Vec2(0.25f, 0.25f));
 				vec2 maxP = testObject->GetPosition() + (testObject->GetDimensions() + Vec2(0.25f, 0.25f));
 
+				// are we hitting this object?
 				if(Intersects(testP, minP, maxP))
 				{
 					// Collision
@@ -143,95 +162,9 @@ bool RayCast(vec2 pos, vec2 dir, RaycastHitResult* HitResult, r32 maxDistance = 
 		}
 	}
 
+	// No Collision
 	return false;
 }
-//
-//void MoveEntity(u32 entityIndex, vec2 dir, r32 deltaTime)
-//{
-//	// Physics Simulation
-//	// Collision between the world (WALLS) and the player
-//	// Below is collision between pillar obj and the player
-//	for (u32 testIndex = 1;
-//		testIndex < EntityManager::EntityCount();
-//		++testIndex)
-//	{
-//		if (testIndex != entityIndex)
-//		{
-//			Entity* testEntity = EntityManager::GetEntity(testIndex);
-//			if (testEntity->type != Entity_None)
-//			{
-//				vec2 minP = testEntity->position - (testEntity->dims + entity->dims);
-//				vec2 maxP = testEntity->position + (testEntity->dims + entity->dims);
-//
-//				if (entity->position.x > minP.x &&
-//					entity->position.x < maxP.x &&
-//					entity->position.y > minP.y &&
-//					entity->position.y < maxP.y)
-//				{
-//					// Collision
-//					entity->position -= deltaP;
-//				}
-//			}
-//		}
-//	}
-//}
-//
-//global_variable r32 timer = 0;
-//
-//void MoveEnemy(u32 entityIndex, u32 targetIndex, Player* playerInfo, r32 deltaTime)
-//{
-//	// Calculate the right vector based on the Up and the Forward Vector of the player
-//	Entity* entity = EntityManager::GetEntity(entityIndex);
-//	Entity* target = EntityManager::GetEntity(targetIndex);
-//
-//	if (target->isAlive)
-//	{
-//		r32 distance = Length(target->position - entity->position);
-//		vec2 direction = {};
-//		if (distance < 10.0f && distance >= 2.0f)
-//		{
-//			if (distance >= 5.0f) // Approach target
-//			{
-//				entity->forward = Normalize(target->position - entity->position);
-//				r32 angle = Dot(entity->forward, player->forward);
-//				if (angle <= -0.9f || angle >= 0.0f)
-//				{
-//					direction.x = 1;
-//				}
-//				// Move entity
-//				MoveEntity(entityIndex, direction, deltaTime);
-//			}
-//			else if (distance >= 2.0f && distance < 5.0f)
-//			{
-//				//Attack
-//				r32 delay = 0.5f;
-//				timer += deltaTime;
-//				if (timer >= delay)
-//				{
-//					if (target->type == EntityType::Entity_Player)
-//					{
-//						playerInfo->playerDamage(10);
-//						target->isAlive = (playerInfo->getHealth() > 0) ? true : false;
-//						MoveEntity(targetIndex, Vec2(-1, 0), deltaTime);
-//						timer = 0;
-//					}
-//				}
-//			}
-//			else
-//			{
-//				// Backup
-//				entity->forward = Normalize(target->position - entity->position);
-//				r32 angle = Dot(entity->forward, player->forward);
-//				if (angle <= -0.9f || angle >= 0.0f)
-//				{
-//					direction.x = -1;
-//				}
-//				// Move entity
-//				MoveEntity(entityIndex, direction, deltaTime);
-//			}
-//		}
-//	}
-//}
 
 void DemoGame::LoadContent()
 {
@@ -249,6 +182,18 @@ void DemoGame::LoadContent()
 	mapW = 80;
 	mapH = 40;
 
+	/*
+		Map
+		# = Walls
+		. = Empty Spaces
+		S = Player Start
+		E = Enemies
+		P = Pillars
+		A = Pistol Ammo
+		R = Armor
+		H = Health
+		D = Doors
+	*/
 	map =
 	{
 		L".................#######################.................#######################"
@@ -259,10 +204,10 @@ void DemoGame::LoadContent()
 		L".................#...#....P...P....#...#.................#...#....P...P....#...#"
 		L"############.....#...#.............#...#.................#...#.............#...#"
 		L"#A........P#######P..############..#...############......#...############..#...#"
-		L"#A...................#.............#...#.....AR..P########.....................#"
+		L"#A...................#.............#...#.H...AR..P########.....................#"
 		L"#R...S...............#.............#...........................................#"
 		L"#R........P#######P..#..############.........................#..############...#"
-		L"############.....#...#.............#...#.....AR..P########...#.............#...#"
+		L"############.....#...#.............#...#.H...AR..P########...#.............#...#"
 		L".................#...#.............#...############......#...#.............#...#"
 		L".................#...############..#...#.................#...############..#...#"
 		L".................#...#.............#...#.................#...#.............#...#"
@@ -278,10 +223,10 @@ void DemoGame::LoadContent()
 		L".................#...######...######...#.................#...######...######...#"
 		L".................#...#....P...P....#...#.................#...#....P...P....#...#"
 		L"############.....#...#.............#...############......#...#.............#...#"
-		L"#.........P#######...############..#...#.....AAA.P########...############..#...#"
-		L"#.................P..#....................................P....................#"
-		L"#....................#.........................................................#"
-		L"#.........P#######P..#..############...#.....RRR.P#######.P..#..############...#"
+		L"#..HH.....P#######...############..#...#.HH..AAA.P########...############..#...#"
+		L"#R................P..#....................................P....................#"
+		L"#R...................#.........................................................#"
+		L"#..AA.....P#######P..#..############...#.HH..RRR.P#######.P..#..############...#"
 		L"############.....#...#.............#...############......#...#.............#...#"
 		L".................#...#.............#...#.................#...#.............#...#"
 		L".................#...############..#...#.................#...############..#...#"
@@ -328,6 +273,7 @@ void DemoGame::LoadContent()
 	// Load the ammo pickup
 	LoadSprite("data/pickups/ammo_pickup_01.sprt", &ammoPickup);
 	LoadSprite("data/pickups/armor_pickup_01.sprt", &armorPickup);
+	LoadSprite("data/pickups/health_pickup_01.sprt", &healthPickup);
 
 	// Setup player
 	for (int y = 0; y < mapH; ++y)
@@ -364,9 +310,14 @@ void DemoGame::LoadContent()
 			{
 				AddArmorPickup(Vec2(x, y));
 			}
+			else if (token == 'H')
+			{
+				AddHealthPickup(Vec2(x, y));
+			}
 		}
 	}
 
+	// Tell all enemies who the player is
 	for (u32 entityIndex = 0;
 		entityIndex < EntityManager::EntityCount();
 		++entityIndex)
@@ -391,21 +342,28 @@ void DemoGame::HandleCollision(r32 deltaTime, GameObject* gameObject)
 		++testIndex)
 	{
 		GameObject* testObject = EntityManager::GetEntity(testIndex);
+		// Make sure to ignore the gameObject who is checking for collisions
 		if (testObject != gameObject)
 		{
+			// Build collision volumes
 			vec2 minP = testObject->GetPosition() - (testObject->GetDimensions() + gameObject->GetDimensions());
 			vec2 maxP = testObject->GetPosition() + (testObject->GetDimensions() + gameObject->GetDimensions());
 			
+			// Does it intersect?
 			if(Intersects(gameObject->GetPosition(), minP, maxP))
 			{
 				// Collision
-				if (!testObject->CompareTag(Tag_PistolAmo) && !testObject->CompareTag(Tag_ArmorPickup))
+				// Collision between non pickup objects
+				if (!testObject->CompareTag(Tag_PistolAmo) && !testObject->CompareTag(Tag_ArmorPickup) && !testObject->CompareTag(Tag_HealthPickup))
 				{
+					// Move them back so they dont overlap
+					// TODO: Reflect the velocity to avoid getting stuck on collision
 					gameObject->Move(-gameObject->dir, deltaTime);
 					break;
 				}
 				else 
 				{
+					// Collision between Pickups
 					if (testObject->CompareTag(Tag_PistolAmo))
 					{
 						if (gameObject->CompareTag(Tag_Player))
@@ -428,6 +386,19 @@ void DemoGame::HandleCollision(r32 deltaTime, GameObject* gameObject)
 							if (player->getArmor() < 100)
 							{
 								player->addArmor(20);
+								EntityManager::RemoveEntity(testIndex);
+							}
+							break;
+						}
+					}
+					if (testObject->CompareTag(Tag_HealthPickup))
+					{
+						if (gameObject->CompareTag(Tag_Player))
+						{
+							Player* player = (Player*)gameObject;
+							if (player->getHealth() < 100)
+							{
+								player->addHealth(20);
 								EntityManager::RemoveEntity(testIndex);
 							}
 							break;
@@ -501,10 +472,11 @@ bool DemoGame::Update(float deltaTime)
 		// Handle Shooting event
 		if (wantsToShoot)
 		{
+			// Get current weapon
 			Weapons* currentWeapon = weapons + player->getCurWeapons();
 			if (currentWeapon)
 			{
-				if (currentWeapon->getAmmo() > 0)
+				if (currentWeapon->getAmmo() > 0 && currentWeapon->getWeaponIndex() != FIST)
 				{
 					RaycastHitResult Hit = {};
 					if (RayCast(player->GetPosition(), player->GetForward(), &Hit))
@@ -531,7 +503,7 @@ bool DemoGame::Update(float deltaTime)
 			wantsToShoot = false;
 		}
 
-		for (u32 entityIndex = 1; entityIndex < EntityManager::EntityCount(); ++entityIndex)
+		for (u32 entityIndex = 0; entityIndex < EntityManager::EntityCount(); ++entityIndex)
 		{
 			if (entityIndex != playerIndex)
 			{
@@ -583,6 +555,10 @@ bool DemoGame::Update(float deltaTime)
 				case Tag_ArmorPickup:
 				{
 					renderer.ProjectObject(&camera, gameObject->GetPosition(), &armorPickup);
+				}break;
+				case Tag_HealthPickup:
+				{
+					renderer.ProjectObject(&camera, gameObject->GetPosition(), &healthPickup);
 				}break;
 				default: {}
 				}
