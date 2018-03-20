@@ -16,13 +16,13 @@ Inventory::Inventory() {}
 
 Inventory::~Inventory() {}
 
-/*
+
 void Inventory::setDoorKeyIndex(KEYS k) {
-	return _doorKeyIndex = k;
+	_doorKeyIndex = k;
 }
 
 KEYS Inventory::getDoorKeyIndex() const {
 	return _doorKeyIndex;
 }
-*/
+
 
