@@ -4,7 +4,7 @@ Project Name: Doom Game
 Start Date: 01/23/2018
 Mod Date: 03/12/2018
 Creator Name: Davin Ross
-Contributors Name: Davin Ross
+Contributors Name: Davin Ross and George Wulfers
 ===========================================================
 Description:
 	This file is the source file for the Player Class
@@ -159,6 +159,15 @@ i32 Player::addHealth(i32 addHealth) {
 void Player::setCurWeapons(WEAPONS newWeaponsIndex) {
 	_curWeaponsIndex = newWeaponsIndex; // Set newWeaponsIndex equal to _curWeaponsIndex
 }
+
+// When the players collision box intersect the collision box on a door,
+// Check to see if player has the appropriate key.
+// If player has the appropriate key,
+// delete key from inventory and open the door.
+// If player does not have the approroiate key,
+// print message "You do not have the key to this door".
+
+// compareKeys function
 
 // Getter Functions
 i8* Player::getName() const {
