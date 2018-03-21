@@ -36,6 +36,19 @@ public:
 		return entities.size();
 	}
 
+	internal_ GameObject* FindGameObject(u32 tag)
+	{
+		for (u32 index = 0; index < EntityCount(); ++index)
+		{
+			GameObject* gameObject = GetEntity(index);
+			if (gameObject->CompareTag(tag))
+			{
+				return gameObject;
+			}
+		}
+		return 0;
+	}
+
 	internal_ void Clear()
 	{
 		entities.clear();

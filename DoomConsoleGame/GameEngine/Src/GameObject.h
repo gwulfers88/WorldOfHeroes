@@ -17,6 +17,7 @@ public:
 	void SetTag(u32);
 	void SetCanCollide(bool);
 	void SetIsActive(bool);
+	void SetIsTrigger(bool);
 
 	bool CompareTag(u32 other) { return tag == other; }
 
@@ -27,7 +28,7 @@ public:
 	r32 GetRotation() { return rotation; }
 	bool CanCollide() { return canCollide; }
 	bool IsActive() { return isActive; }
-
+	bool IsTrigger() { return isTrigger; }
 	void Rotate(r32 angle) { rotation += angle; }
 	void Move(vec2 direction, r32 deltaTime);
 
@@ -39,7 +40,9 @@ protected:
 
 	bool isDirty;
 	bool canCollide;
+	bool isTrigger;
 	bool isActive;
+
 	vec2 dimensions;
 	vec2 position;
 	vec2 velocity;
