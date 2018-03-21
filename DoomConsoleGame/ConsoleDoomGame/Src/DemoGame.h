@@ -38,6 +38,7 @@ protected:
 	Sprite hudBG;
 	Sprite ammoPickup;
 	Sprite armorPickup;
+	Sprite healthPickup;
 
 	vec2 hudP;
 	vec2 hudDims;
