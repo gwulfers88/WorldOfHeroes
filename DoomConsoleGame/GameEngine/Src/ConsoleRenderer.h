@@ -14,7 +14,7 @@ render the current game
 
 #include "platform.h"
 #include "Sprite.h"
-#include "vec2.h"
+#include "GameObject.h"
 #include "Entity.h"
 
 #pragma pack(push, 16)

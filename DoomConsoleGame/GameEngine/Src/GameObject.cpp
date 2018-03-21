@@ -5,6 +5,8 @@ GameObject::GameObject()
 	isDirty = true;
 	canCollide = true;
 	isActive = true;
+	isTrigger = false;
+
 	dimensions = {};
 	position = {};
 	velocity = {};
@@ -52,6 +54,11 @@ void GameObject::SetCanCollide(bool collidable)
 void GameObject::SetIsActive(bool activated)
 {
 	isActive = activated;
+}
+
+void GameObject::SetIsTrigger(bool triggerable)
+{
+	isTrigger = triggerable;
 }
 
 void GameObject::Move(vec2 direction, r32 deltaTime)
