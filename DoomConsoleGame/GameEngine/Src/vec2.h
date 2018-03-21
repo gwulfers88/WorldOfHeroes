@@ -202,4 +202,46 @@ internal_ vec2 Clamp01(vec2 val)
 	return result;
 }
 
+// Checks to see if this point is intersecting with the collision box
+internal_ bool Intersects(vec2 point, vec2 minP, vec2 maxP)
+{
+	return (point.x > minP.x &&
+		point.x < maxP.x &&
+		point.y > minP.y &&
+		point.y < maxP.y);
+}
+
+internal_ bool operator <(const vec2& lhs, const vec2& rhs)
+{
+	return (LengthSq(lhs) < LengthSq(rhs));
+}
+
+struct rect2
+{
+	vec2 min;
+	vec2 max;
+};
+
+internal_ rect2 Rect2(vec2 min, vec2 max)
+{
+	rect2 result = {};
+	result.min = min;
+	result.max = max;
+	return result;
+}
+
+// Checks to see if this point is intersecting with the collision box
+internal_ bool Intersects(vec2 point, rect2 rect)
+{
+	return Intersects(point, rect.min, rect.max);
+}
+
+// Grows rectangle by half dimension
+internal_ rect2 GrowRect(rect2 rect, vec2 halfDims)
+{
+	rect.min -= halfDims;
+	rect.max += halfDims;
+	return rect;
+}
+
 #endif

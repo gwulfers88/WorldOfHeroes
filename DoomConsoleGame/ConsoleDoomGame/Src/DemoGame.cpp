@@ -97,6 +97,7 @@ void AddPistolAmmo(vec2 pos)
 	gameObject->SetTag(Tag_PistolAmo);
 	gameObject->SetPosition(pos);
 	gameObject->SetDimensions(Vec2(0.5f, 0.5f));
+	gameObject->SetIsTrigger(true);
 	EntityManager::AddEntity(gameObject);
 }
 
@@ -108,6 +109,7 @@ void AddArmorPickup(vec2 pos)
 	gameObject->SetTag(Tag_ArmorPickup);
 	gameObject->SetPosition(pos);
 	gameObject->SetDimensions(Vec2(0.5f, 0.5f));
+	gameObject->SetIsTrigger(true);
 	EntityManager::AddEntity(gameObject);
 }
 
@@ -119,16 +121,8 @@ void AddHealthPickup(vec2 pos)
 	gameObject->SetTag(Tag_HealthPickup);
 	gameObject->SetPosition(pos);
 	gameObject->SetDimensions(Vec2(0.5f, 0.5f));
+	gameObject->SetIsTrigger(true);
 	EntityManager::AddEntity(gameObject);
-}
-
-// Checks to see if this point is intersecting with the collision box
-bool Intersects(vec2 point, vec2 minP, vec2 maxP)
-{
-	return (point.x > minP.x &&
-		point.x < maxP.x &&
-		point.y > minP.y &&
-		point.y < maxP.y);
 }
 
 struct RaycastHitResult
@@ -218,8 +212,8 @@ void DemoGame::LoadContent()
 		L".................#...#....P...P....#...#.................#...#....P...P....#...#"
 		L"############.....#...#.............#...#.................#...#.............#...#"
 		L"#A........P#######P..############..#...############......#...############..#...#"
-		L"#A...................#.............#...#.H...AR..P########.....................#"
-		L"#R...S...............#.............#...........................................#"
+		L"#A........D..........#.............#...#.H...AR..P########.....................#"
+		L"#R...S....D..........#.............#...........................................#"
 		L"#R........P#######P..#..############.........................#..############...#"
 		L"############.....#...#.............#...#.H...AR..P########...#.............#...#"
 		L".................#...#.............#...############......#...#.............#...#"
@@ -288,7 +282,8 @@ void DemoGame::LoadContent()
 	LoadSprite("data/pickups/ammo_pickup_01.sprt", &ammoPickup);
 	LoadSprite("data/pickups/armor_pickup_01.sprt", &armorPickup);
 	LoadSprite("data/pickups/health_pickup_01.sprt", &healthPickup);
-
+	LoadSprite("data/cross_hair_01.sprt", &crossHair);
+	
 	// Setup player
 	for (int y = 0; y < mapH; ++y)
 	{
@@ -372,20 +367,7 @@ void DemoGame::HandleCollision(r32 deltaTime, GameObject* gameObject)
 			{
 				// Collision
 				// Collision between non pickup objects
-				if (!testObject->CompareTag(Tag_PistolAmo) && !testObject->CompareTag(Tag_ArmorPickup) && !testObject->CompareTag(Tag_HealthPickup))
-				{
-					// Move them back so they dont overlap
-					// TODO: Reflect the velocity to avoid getting stuck on collision
-					gameObject->Move(-gameObject->dir, deltaTime);
-
-					if (testObject->CompareTag(Tag_Door))
-					{
-						testObject->SetIsActive(false);
-					}
-
-					break;
-				}
-				else 
+				if (testObject->IsTrigger())	//Handle Triggerables
 				{
 					// Collision between Pickups
 					if (testObject->CompareTag(Tag_PistolAmo))
@@ -429,7 +411,20 @@ void DemoGame::HandleCollision(r32 deltaTime, GameObject* gameObject)
 						}
 					}
 				}
-				
+				else //Handle Rigid Bodies
+				{
+					// Move them back so they dont overlap
+					// TODO: Reflect the velocity to avoid getting stuck on collision
+					gameObject->Move(-gameObject->dir, deltaTime);
+
+					if (testObject->CompareTag(Tag_Door))
+					{
+						// TODO: Compare keys from the player and the Door here!!!
+						testObject->SetIsActive(false);
+					}
+
+					break;
+				}
 			}
 		}
 	}
@@ -446,6 +441,8 @@ bool DemoGame::Update(float deltaTime)
 
 	if (player->IsAlive())
 	{
+		bool showDamage = false;
+
 		player->dir = Vec2(0, 0); // X: Fwd/Bkwd, Y: StrafeL, StrafeR
 
 		if (Controller)
@@ -510,11 +507,8 @@ bool DemoGame::Update(float deltaTime)
 							Enemy* enemy = (Enemy*)Hit.entity;
 							if(enemy)
 							{
-								if (enemy->IsAlive())
-								{
-									enemy->takeDamage(20);
-								}
-								else
+								enemy->takeDamage(20);
+								if (!enemy->IsAlive())
 								{
 									EntityManager::RemoveEntity(Hit.entityIndex);
 								}
@@ -527,7 +521,7 @@ bool DemoGame::Update(float deltaTime)
 			wantsToShoot = false;
 		}
 
-		u16 ClearColor = PIXEL_COLOR_GREY;
+		// Enemy Update Loop
 		for (u32 entityIndex = 0; entityIndex < EntityManager::EntityCount(); ++entityIndex)
 		{
 			if (entityIndex != playerIndex)
@@ -540,7 +534,7 @@ bool DemoGame::Update(float deltaTime)
 					gameObject->Update(deltaTime);
 					if (((Enemy*)gameObject)->hasDamagedPlayer())
 					{
-						ClearColor = PIXEL_COLOR_LIGHT_RED;
+						showDamage = true;
 					}
 					HandleCollision(deltaTime, gameObject);
 				}
@@ -548,8 +542,9 @@ bool DemoGame::Update(float deltaTime)
 		}
 
 		// Clear buffer to certain color
-		renderer.ClearBuffer(ClearColor);
+		renderer.ClearBuffer(PIXEL_COLOR_GREY);
 
+		// Build Camera
 		Camera camera = {};
 		camera.Position = player->GetPosition();
 		camera.rotation = player->GetRotation();
@@ -559,6 +554,7 @@ bool DemoGame::Update(float deltaTime)
 		// Projecting 2D to 3D world
 		renderer.ProjectWorld(&camera, map, mapW, mapH, &wall);
 
+		// Projecting to 3D World
 		for (u32 entityIndex = 0; entityIndex < EntityManager::EntityCount(); ++entityIndex)
 		{
 			if (entityIndex != playerIndex)
@@ -595,6 +591,12 @@ bool DemoGame::Update(float deltaTime)
 		}
 
 		// HUD Routines Below
+
+		// Cross Hair
+		vec2 p = Vec2(renderer.GetRenderBuffers()->Width*0.5f, renderer.GetRenderBuffers()->Height*0.5f) - Vec2(crossHair.Width*0.5f, crossHair.Height*0.5f);
+
+		renderer.DrawUI(p, Vec2(20, 20), &crossHair);
+
 		// 2D Map
 		vec2 screenOnePos = Vec2(10, 10);
 
@@ -651,6 +653,10 @@ bool DemoGame::Update(float deltaTime)
 			}
 		}
 
+		// Flashes the screen red when hit by enemies
+		if (showDamage)
+			renderer.ClearBuffer(PIXEL_COLOR_LIGHT_RED);
+
 		// Drawing UI The dumb way
 		for (u32 i = 0; i < 7; i++)
 		{
@@ -698,6 +704,7 @@ bool DemoGame::Update(float deltaTime)
 				renderer.DrawString("armor", ArrayCount("armor"), font, ArrayCount(font), hudP + text_offset, fontDims);
 			}
 		}
+
 	}
 	else
 	{
