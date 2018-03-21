@@ -52,7 +52,9 @@ public:
 	
 	// Getters
 	i32 getHealth() const;
+	i32 getMaxHealth() const;
 	i32 getArmor() const;
+	i32 getMaxArmor() const;
 	i8* getName() const;
 	WEAPONS getCurWeapons();
 	
@@ -74,7 +76,7 @@ private:
 	Weapons* _weapons[2]; // Weapons Array
 
 	// Door Keys
-	Inventory _doorKeys[3]; // Keys Array
+	//Inventory _storedDoorKeys; // Keys Array
 
 };
 #endif

@@ -57,6 +57,7 @@ void Weapons::setAmmo(i32 ammo) {
 }
 
 void Weapons::setMaxAmmo(i32 maxAmmo) {
+	// Check to make sure that you are setting max ammo to a weapon that uses ammo 
 	if (_weaponIndex != FIST) {
 		_maxAmmo = maxAmmo;
 	}
@@ -67,7 +68,10 @@ void Weapons::setWeaponIndex(WEAPONS w) {
 }
 
 void Weapons::setWeaponName(i8* wn) {
+	// Check to see if there is a weapon index
 	if (_weaponIndex != NONE) {
+		
+		// Creates an array that holds weapon name
 		i32 strSize = strlen(wn) + 1;
 		weaponName = CreateArray(Memory::GetPersistantHandle(), i8, strSize);
 		strcpy(weaponName, wn);

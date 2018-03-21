@@ -122,6 +122,7 @@ void AddHealthPickup(vec2 pos)
 	EntityManager::AddEntity(gameObject);
 }
 
+// Checks to see if this point is intersecting with the collision box
 bool Intersects(vec2 point, vec2 minP, vec2 maxP)
 {
 	return (point.x > minP.x &&

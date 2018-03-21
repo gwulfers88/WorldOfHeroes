@@ -157,7 +157,7 @@ i32 Player::addHealth(i32 addHealth) {
 }
 
 void Player::setCurWeapons(WEAPONS newWeaponsIndex) {
-	_curWeaponsIndex = newWeaponsIndex; // _curWeaponIndex does not exist in player.h
+	_curWeaponsIndex = newWeaponsIndex; // Set newWeaponsIndex equal to _curWeaponsIndex
 }
 
 // Getter Functions
@@ -169,8 +169,16 @@ i32 Player::getArmor() const {
 	return _armor;
 }
 
+i32 Player::getMaxArmor() const {
+	return _maxArmor;
+}
+
 i32 Player::getHealth() const {
 	return _health;
+}
+
+i32 Player::getMaxHealth() const {
+	return _maxHealth;
 }
 
 WEAPONS Player::getCurWeapons() {
