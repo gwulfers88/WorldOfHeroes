@@ -96,7 +96,7 @@ void ConsoleRenderer::DrawString(char* text, u32 textCount, Sprite* font, u32 fo
 }
 
 // Projects 2D object into 3D World.
-void ConsoleRenderer::ProjectObject(Camera* camera, vec2 objP, Sprite* img)
+void ConsoleRenderer::ProjectObject(Camera* camera, vec2 objP, Sprite* img, u16 tint)
 {
 	// drawing Objects
 	// We want to calculate the distance between the object and the player
@@ -144,7 +144,13 @@ void ConsoleRenderer::ProjectObject(Camera* camera, vec2 objP, Sprite* img)
 				if (ObjectCol >= 0 && ObjectCol < screen->Width)
 				{
 					if (glyph != ' ' && screen->DepthBuffer[ObjectCol] >= distanceToPlayer)
+					{
+						if (tint != USHRT_MAX)
+						{
+							color = tint;
+						}
 						DrawPixel({ (r32)ObjectCol, (r32)ObjectCeiling + y }, glyph, color);
+					}
 				}
 			}
 		}
@@ -206,13 +212,13 @@ void ConsoleRenderer::ProjectWorld(Camera* camera, wchar_t* Map, u32 MapW, u32 M
 					float testAngle = atan2f(testP.y - wallMidP.y, testP.x - wallMidP.x);
 
 					if (testAngle >= -PI * 0.25f && testAngle < PI * 0.25f)
-						sampleX = testP.y - TestY;
+						sampleX = wallMidP.y - TestY;
 					if (testAngle >= PI * 0.25f && testAngle < PI * 0.75f)
-						sampleX = testP.x - TestX;
+						sampleX = wallMidP.x - TestX;
 					if (testAngle < -PI * 0.25f && testAngle >= -PI * 0.75f)
-						sampleX = testP.x - TestX;
+						sampleX = wallMidP.x - TestX;
 					if (testAngle >= PI * 0.75f || testAngle < -PI * 0.75f)
-						sampleX = testP.y - TestY;
+						sampleX = wallMidP.y - TestY;
 				}
 				// Ray is still in bounds to test cell for Doors
 				else if (Map[(i32)TestY * MapW + (i32)TestX] == L'D')
@@ -314,6 +320,7 @@ void ConsoleRenderer::ProjectWorld(Camera* camera, wchar_t* Map, u32 MapW, u32 M
 					shade = PIXEL_DARK;
 					Color = PIXEL_COLOR_DARK_GREEN;
 				}
+
 				DrawPixel({ (r32)x, (r32)y }, shade, Color);
 			}
 		}
