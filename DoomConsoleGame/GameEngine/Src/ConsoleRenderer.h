@@ -77,7 +77,7 @@ public:
 	// Draws a sprite onto the screen buffer using desired x, y pos and color.
 	void DrawSprite(vec2 pos, vec2 dims, wchar_t* spriteData, u16 *colorData);
 	// Projects 2D object into 3D World.
-	void ProjectObject(Camera* camera, vec2 objP, Sprite* img);
+	void ProjectObject(Camera* camera, vec2 objP, Sprite* img, u16 tint = USHRT_MAX);
 	// Projects the world from 2D to 3D
 	void ProjectWorld(Camera* camera, wchar_t* Map, u32 MapW, u32 MapH, Sprite* wall);
 	// This function prints strings using our font.

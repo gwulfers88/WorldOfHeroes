@@ -8,6 +8,7 @@ ContributorsName: George Wulfers
 ===================================================
 All of the code for the game will be held here within this class.
 *******************************************************/
+
 #ifndef DEMO_GAME_H
 #define DEMO_GAME_H
 

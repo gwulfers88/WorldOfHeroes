@@ -1,3 +1,15 @@
+/*******************************************************
+FileName: DemoGame.h
+Project Name: Doom Game
+StartDate: 01/20/2018
+ModDate: 02/27/2018
+CreatorName: George Wulfers
+ContributorsName: George Wulfers
+===================================================
+All of the code for the game will be held here within this class.
+*******************************************************/
+
+
 #ifndef GAME_OBJECT_H
 #define GAME_OBJECT_H
 

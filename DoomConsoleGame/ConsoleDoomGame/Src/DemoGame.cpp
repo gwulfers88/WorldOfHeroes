@@ -3,12 +3,14 @@
 #include "File.h"
 #include "Entity.h"
 #include "Enemy.h"
+#include "Raycast.h"
 
 std::vector<GameObject*> EntityManager::entities;
 
 // Tags to identify objects
 enum Tags
 {
+	Tag_None,
 	Tag_Player,
 	Tag_Enemy,
 	Tag_Wall,
@@ -123,55 +125,6 @@ void AddHealthPickup(vec2 pos)
 	gameObject->SetDimensions(Vec2(0.5f, 0.5f));
 	gameObject->SetIsTrigger(true);
 	EntityManager::AddEntity(gameObject);
-}
-
-struct RaycastHitResult
-{
-	GameObject* entity;
-	vec2 point;
-	r32 distance;
-	u32 entityIndex;
-};
-
-bool RayCast(vec2 pos, vec2 dir, RaycastHitResult* HitResult, r32 maxDistance = 16.0f, u32 IgnoreTag = 0)
-{
-	// Ray cast
-	r32 stepSize = 0.1f;
-	while (!HitResult->entity && HitResult->distance < maxDistance)
-	{
-		// Current distance the ray cast has traveled.
-		HitResult->distance += stepSize;
-
-		// current position testing for collision
-		vec2 testP = { pos.x + dir.x * HitResult->distance, pos.y + dir.y * HitResult->distance };
-
-		// Loop through our game objects to see if we have hit something.
-		for (u32 entityIndex = 0; entityIndex < EntityManager::EntityCount(); ++entityIndex)
-		{
-			// test entity if it is not being ignored.
-			GameObject* testObject = EntityManager::GetEntity(entityIndex);
-			if (!testObject->CompareTag(IgnoreTag))
-			{
-				// Calculate the collision box.
-				vec2 minP = testObject->GetPosition() - (testObject->GetDimensions() + Vec2(0.25f, 0.25f));
-				vec2 maxP = testObject->GetPosition() + (testObject->GetDimensions() + Vec2(0.25f, 0.25f));
-
-				// are we hitting this object?
-				if(Intersects(testP, minP, maxP))
-				{
-					// Collision
-					HitResult->entity = testObject;
-					HitResult->point = testP;
-					HitResult->entityIndex = entityIndex;
-
-					return true;
-				}
-			}
-		}
-	}
-
-	// No Collision
-	return false;
 }
 
 void DemoGame::LoadContent()
@@ -443,7 +396,7 @@ bool DemoGame::Update(float deltaTime)
 	{
 		bool showDamage = false;
 
-		player->dir = Vec2(0, 0); // X: Fwd/Bkwd, Y: StrafeL, StrafeR
+		player->dir = Vec2(0, 0); // X: Fwd/Bkwd, Y: StrafeL/StrafeR
 
 		if (Controller)
 		{
@@ -500,7 +453,7 @@ bool DemoGame::Update(float deltaTime)
 				if (currentWeapon->getAmmo() > 0 && currentWeapon->getWeaponIndex() != FIST)
 				{
 					RaycastHitResult Hit = {};
-					if (RayCast(player->GetPosition(), player->GetForward(), &Hit))
+					if (Raycast(player->GetPosition(), player->GetForward(), &Hit, 16.0f, Tag_Player))
 					{
 						if (Hit.entity)
 						{
@@ -570,8 +523,11 @@ bool DemoGame::Update(float deltaTime)
 				case Tag_Enemy:
 				{
 					Enemy* enemy = (Enemy*)gameObject;
-					if(enemy->IsAlive())
-						renderer.ProjectObject(&camera, gameObject->GetPosition(), &wall);
+					if (enemy->IsAlive())
+					{
+						renderer.ProjectObject(&camera, gameObject->GetPosition(), &wall, enemy->getTookDamage() ? PIXEL_COLOR_DARK_RED : USHRT_MAX);
+						enemy->setTookDamage(false);
+					}
 				}break;
 				case Tag_PistolAmo:
 				{
