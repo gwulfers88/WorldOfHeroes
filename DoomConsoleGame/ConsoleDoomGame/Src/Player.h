@@ -4,7 +4,7 @@ Project Name: Doom Game
 Start Date: 01/23/2018
 Mod Date: 03/12/2018
 Creator Name: Davin Ross
-Contributors Name: Davin Ross
+Contributors Name: Davin Ross adn George Wulfers
 ===========================================================
 Description: 
 	This file is the header file for the Player Class
@@ -44,7 +44,7 @@ public:
 	// Setters
 	void setHealth(i32);
 	void setMaxHealth(i32 a = 100);
-
+	
 	void setArmor(i32);
 	void setMaxArmor(i32 a = 100);
 

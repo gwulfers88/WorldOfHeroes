@@ -4,7 +4,7 @@ Project Name: Doom Game
 Start Date: 02/20/2018
 Mod Date: 03/12/2018
 Creator Name: Davin Ross
-Contributors Name: Davin Ross
+Contributors Name: Davin Ross and George Wulfers
 ===========================================================
 Description:
 This file is the header file for the Weapons Class
